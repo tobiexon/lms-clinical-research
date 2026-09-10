@@ -1,0 +1,50 @@
+{
+  "name": "exon-lms-api",
+  "version": "1.0.0",
+  "description": "Exon Sciences Clinical Research LMS — NestJS Backend",
+  "author": "Exon Sciences",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "node node_modules/@nestjs/cli/bin/nest.js build",
+    "start": "node node_modules/@nestjs/cli/bin/nest.js start",
+    "start:dev": "node node_modules/@nestjs/cli/bin/nest.js start --watch",
+    "start:prod": "node dist/main",
+    "db:push": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/prisma/build/index.js db push',{timeout:30000,env:{...process.env}}).toString())\"",
+    "db:generate": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/prisma/build/index.js generate',{timeout:30000,env:{...process.env}}).toString())\"",
+    "db:studio": "node node_modules/prisma/build/index.js studio",
+    "db:seed": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/ts-node/dist/bin.js prisma/seed.ts',{timeout:30000,env:{...process.env}}).toString())\""
+  },
+  "dependencies": {
+    "@nestjs/common": "^10.3.0",
+    "@nestjs/core": "^10.3.0",
+    "@nestjs/platform-express": "^10.3.0",
+    "@nestjs/config": "^3.1.1",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/passport": "^10.0.3",
+    "@nestjs/throttler": "^5.1.1",
+    "@prisma/client": "^5.8.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "bcrypt": "^5.1.1",
+    "class-validator": "^0.14.1",
+    "class-transformer": "^0.5.1",
+    "helmet": "^7.1.0",
+    "reflect-metadata": "^0.2.1",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.3.0",
+    "@nestjs/schematics": "^10.1.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.0",
+    "@types/passport-jwt": "^4.0.1",
+    "@types/passport-local": "^1.0.38",
+    "prisma": "^5.8.0",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0"
+  }
+}

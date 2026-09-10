@@ -1,0 +1,27 @@
+# ── Dependencies ────────────────────────────
+node_modules/
+
+# ── Next.js build output ─────────────────────
+.next/
+out/
+
+# ── Environment — NEVER commit these ────────
+.env.local
+.env.production
+.env.staging
+.env*.local
+
+# ── Vercel ───────────────────────────────────
+.vercel
+
+# ── TypeScript ───────────────────────────────
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Logs ────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ── OS ──────────────────────────────────────
+.DS_Store
+Thumbs.db

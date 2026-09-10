@@ -1,0 +1,371 @@
+// ============================================================
+// EXON SCIENCES LMS — PRISMA SCHEMA
+// PostgreSQL owns ALL data: users, content, progress, certs
+// ============================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Role {
+  LEARNER
+  INSTRUCTOR
+  CONTENT_EDITOR   // non-technical Exon staff who manage courses
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  SUSPENDED
+  EXPIRED
+}
+
+enum DifficultyLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  PDF
+  WEBINAR
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  MULTI_SELECT
+}
+
+// ─────────────────────────────────────────
+// USERS & AUTH
+// ─────────────────────────────────────────
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String
+  firstName       String
+  lastName        String
+  role            Role     @default(LEARNER)
+  country         String   @default("GB")
+  timezone        String   @default("Europe/London")
+  isEmailVerified Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  avatarUrl       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  enrollments   Enrollment[]
+  quizAttempts  QuizAttempt[]
+  certificates  Certificate[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────
+// CONTENT — replaces Contentstack entirely
+// ─────────────────────────────────────────
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  iconUrl     String?
+  createdAt   DateTime @default(now())
+
+  courses Course[]
+
+  @@map("categories")
+}
+
+model Instructor {
+  id          String   @id @default(cuid())
+  fullName    String
+  title       String
+  bio         String?
+  photoUrl    String?
+  linkedinUrl String?
+  credentials String[] // array of strings e.g. ["ACRP-CP", "MSc Clinical Research"]
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  courses CourseInstructor[]
+
+  @@map("instructors")
+}
+
+model Program {
+  id                String   @id @default(cuid())
+  title             String
+  slug              String   @unique
+  description       String?
+  bannerUrl         String?
+  awardTitle        String?
+  durationWeeks     Int?
+  accreditationBody String?
+  isFeatured        Boolean  @default(false)
+  isPublished       Boolean  @default(false)
+  sortOrder         Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  courses ProgramCourse[]
+
+  @@map("programs")
+}
+
+model Course {
+  id                 String          @id @default(cuid())
+  title              String
+  slug               String          @unique
+  subtitle           String?
+  // Rich text stored as JSON (TipTap/ProseMirror format)
+  description        Json?
+  learningObjectives String[]
+  prerequisites      String[]
+  thumbnailUrl       String?
+  promoVideoUrl      String?
+  difficultyLevel    DifficultyLevel @default(BEGINNER)
+  durationHours      Float           @default(0)
+  language           String          @default("en-GB")
+  targetAudience     String[]
+  accreditation      String?
+  tags               String[]
+  isFeatured         Boolean         @default(false)
+  isPublished        Boolean         @default(false)
+  seoTitle           String?
+  seoDescription     String?
+  sortOrder          Int             @default(0)
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  categoryId String?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  instructors         CourseInstructor[]
+  modules             Module[]
+  programs            ProgramCourse[]
+  enrollments         Enrollment[]
+  certificateTemplate CertificateTemplate?
+
+  @@map("courses")
+}
+
+// Many-to-many: Course ↔ Instructor
+model CourseInstructor {
+  courseId     String
+  instructorId String
+  course       Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor   Instructor @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, instructorId])
+  @@map("course_instructors")
+}
+
+// Many-to-many: Program ↔ Course (ordered)
+model ProgramCourse {
+  programId String
+  courseId  String
+  order     Int    @default(0)
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  course    Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([programId, courseId])
+  @@map("program_courses")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  order       Int      @default(0)
+  isMandatory Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lessons Lesson[]
+  quiz    Quiz?
+
+  @@map("modules")
+}
+
+model Lesson {
+  id                    String     @id @default(cuid())
+  moduleId              String
+  module                Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title                 String
+  lessonType            LessonType @default(TEXT)
+  // Rich text content stored as JSON
+  content               Json?
+  videoUrl              String?
+  videoDurationMinutes  Float?
+  pdfUrl                String?
+  downloadableResources Json?      // [{label, url}]
+  isPreview             Boolean    @default(false)
+  order                 Int        @default(0)
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+
+  progress LessonProgress[]
+
+  @@map("lessons")
+}
+
+model Quiz {
+  id                  String   @id @default(cuid())
+  moduleId            String?  @unique
+  module              Module?  @relation(fields: [moduleId], references: [id])
+  title               String
+  instructions        String?
+  passMarkPercentage  Int      @default(70)
+  timeLimitMinutes    Int?
+  maxAttempts         Int      @default(3)
+  randomizeQuestions  Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  questions    QuizQuestion[]
+  attempts     QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id           String       @id @default(cuid())
+  quizId       String
+  quiz         Quiz         @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionText String
+  questionType QuestionType @default(MULTIPLE_CHOICE)
+  explanation  String?
+  marks        Int          @default(1)
+  order        Int          @default(0)
+  createdAt    DateTime     @default(now())
+
+  options QuizOption[]
+
+  @@map("quiz_questions")
+}
+
+model QuizOption {
+  id         String       @id @default(cuid())
+  questionId String
+  question   QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  optionText String
+  isCorrect  Boolean      @default(false)
+  order      Int          @default(0)
+
+  @@map("quiz_options")
+}
+
+model CertificateTemplate {
+  id             String  @id @default(cuid())
+  courseId       String  @unique
+  course         Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  heading        String  @default("Certificate of Completion")
+  bodyText       String?
+  signatureName  String?
+  signatureTitle String?
+  logoUrl        String?
+  backgroundUrl  String?
+
+  @@map("certificate_templates")
+}
+
+// ─────────────────────────────────────────
+// LEARNER DATA
+// ─────────────────────────────────────────
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId    String
+  course      Course           @relation(fields: [courseId], references: [id])
+  status      EnrollmentStatus @default(ACTIVE)
+  enrolledAt  DateTime         @default(now())
+  completedAt DateTime?
+  expiresAt   DateTime?
+
+  progress     LessonProgress[]
+  certificates Certificate[]
+
+  @@unique([userId, courseId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id            String     @id @default(cuid())
+  enrollmentId  String
+  enrollment    Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lessonId      String
+  lesson        Lesson     @relation(fields: [lessonId], references: [id])
+  isCompleted   Boolean    @default(false)
+  timeSpentSecs Int        @default(0)
+  completedAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([enrollmentId, lessonId])
+  @@map("lesson_progress")
+}
+
+model QuizAttempt {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizId        String
+  quiz          Quiz      @relation(fields: [quizId], references: [id])
+  answers       Json      // [{questionId, selectedOptionId, isCorrect}]
+  score         Float
+  passed        Boolean
+  attemptNumber Int       @default(1)
+  startedAt     DateTime  @default(now())
+  submittedAt   DateTime?
+
+  @@map("quiz_attempts")
+}
+
+model Certificate {
+  id               String     @id @default(cuid())
+  userId           String
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollmentId     String
+  enrollment       Enrollment @relation(fields: [enrollmentId], references: [id])
+  courseTitle      String
+  issuedAt         DateTime   @default(now())
+  expiresAt        DateTime?
+  pdfUrl           String?
+  verificationCode String     @unique @default(cuid())
+
+  @@map("certificates")
+}

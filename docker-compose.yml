@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: exon_lms_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: exon_lms
+      POSTGRES_USER: exon_user
+      POSTGRES_PASSWORD: ExonLMS2024!
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U exon_user -d exon_lms"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+    name: exon_lms_pgdata

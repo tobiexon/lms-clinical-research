@@ -6,8 +6,8 @@ import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Exon Sciences | Clinical Research Learning',
-    template: '%s | Exon Sciences',
+    default: 'Clinical Research Nexus | Online Training & Certification',
+    template: '%s | Clinical Research Nexus',
   },
   description:
     'Professional clinical research training for the UK and global healthcare community. ICH GCP, Pharmacovigilance, Regulatory Affairs and more.',
@@ -21,6 +21,11 @@ export const metadata: Metadata = {
     'CRA training',
     'clinical data management',
   ],
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -2,47 +2,80 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { enrollmentsApi } from '@/lib/api';
-import Cookies from 'js-cookie';
+import { useCartStore } from '@/lib/cart-store';
 
 interface Props {
   courseId: string;
-  courseTitle: string;
+  slug: string;
+  title: string;
+  price?: number;
+  originalPrice?: number;
+  thumbnailUrl?: string;
+  category?: string;
+  variant?: 'gold' | 'navy';
 }
 
-export default function EnrollButton({ courseId, courseTitle }: Props) {
+export default function EnrollButton({
+  courseId,
+  slug,
+  title,
+  price = 100.00,
+  originalPrice,
+  thumbnailUrl,
+  category,
+  variant = 'gold',
+}: Props) {
+  const { addItem, isInCart } = useCartStore();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [added, setAdded] = useState(false);
+  const alreadyInCart = isInCart(courseId);
 
-  async function handleEnroll() {
-    const token = Cookies.get('access_token');
-    if (!token) {
-      router.push(`/login?redirect=/courses`);
+  const btnClass = variant === 'gold'
+    ? 'w-full block text-center font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wide'
+    : 'w-full block text-center font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wide';
+
+  function handleAddToCart() {
+    if (alreadyInCart) {
+      // Already in cart — go to checkout
+      router.push('/checkout');
       return;
     }
-    setLoading(true);
-    setError('');
-    try {
-      await enrollmentsApi.enroll(courseId);
-      router.push(`/learn/${courseId}`);
-    } catch (err: any) {
-      const msg = err.response?.data?.message || '';
-      if (msg.toLowerCase().includes('already enrolled')) {
-        router.push(`/learn/${courseId}`);
-      } else {
-        setError(msg || 'Enrolment failed. Please try again.');
-        setLoading(false);
-      }
-    }
+
+    addItem({ courseId, slug, title, price, originalPrice, thumbnailUrl, category });
+    setAdded(true);
+
+    // Reset "Added!" state after 2s
+    setTimeout(() => setAdded(false), 2000);
+  }
+
+  if (alreadyInCart) {
+    return (
+      <div className="space-y-2">
+        <button
+          onClick={() => router.push('/checkout')}
+          className={`${btnClass} bg-green-600 hover:bg-green-700 text-white`}
+        >
+          ✓ Go to Checkout
+        </button>
+        <p className="text-xs text-center text-green-600 font-medium">
+          This course is in your cart
+        </p>
+      </div>
+    );
   }
 
   return (
-    <div>
-      {error && <p className="text-red-600 text-xs mb-2 text-center">{error}</p>}
-      <button onClick={handleEnroll} disabled={loading} className="btn-primary w-full text-center">
-        {loading ? 'Enrolling...' : 'Enrol Now — Free'}
-      </button>
-    </div>
+    <button
+      onClick={handleAddToCart}
+      className={`${btnClass} ${
+        added
+          ? 'bg-green-500 text-white'
+          : variant === 'gold'
+          ? 'bg-[#c9a84c] hover:bg-[#b8973b] text-white'
+          : 'bg-[#0d2233] hover:bg-[#1a3a5c] text-white'
+      }`}
+    >
+      {added ? '✓ Added to Cart!' : 'Enrol Now'}
+    </button>
   );
 }

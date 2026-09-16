@@ -124,6 +124,28 @@ export const certificatesApi = {
   verify: (code: string) => api.get(`/certificates/verify/${code}`),
 };
 
+// ── Payments ──────────────────────────────────────────────────
+export const paymentsApi = {
+  processPayment: (data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    items: {
+      courseId: string;
+      courseTitle: string;
+      courseSlug: string;
+      courseCategory?: string;
+      unitPrice: number;
+    }[];
+    cardLast4?: string;
+    cardBrand?: string;
+    gatewayReference?: string;
+  }) => api.post('/payments', data),
+
+  getMyPayments: () => api.get('/payments'),
+  getPayment: (id: string) => api.get(`/payments/${id}`),
+};
+
 // ── Admin — content management ────────────────────────────────
 export const adminApi = {
   // Stats

@@ -50,6 +50,21 @@ enum QuestionType {
   MULTI_SELECT
 }
 
+enum PaymentStatus {
+  UNPAID      // default — never made a payment
+  PENDING     // payment initiated but not confirmed
+  PAID        // payment confirmed
+  FAILED      // payment failed
+  REFUNDED    // payment was refunded
+}
+
+enum PaymentMethod {
+  CARD
+  PAYPAL
+  BANK_TRANSFER
+  FREE
+}
+
 // ─────────────────────────────────────────
 // USERS & AUTH
 // ─────────────────────────────────────────
@@ -66,6 +81,7 @@ model User {
   isEmailVerified Boolean  @default(false)
   isActive        Boolean  @default(true)
   avatarUrl       String?
+  paymentStatus   PaymentStatus @default(UNPAID)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -73,6 +89,7 @@ model User {
   quizAttempts  QuizAttempt[]
   certificates  Certificate[]
   refreshTokens RefreshToken[]
+  payments      Payment[]
 
   @@map("users")
 }
@@ -163,6 +180,8 @@ model Course {
   isPublished        Boolean         @default(false)
   seoTitle           String?
   seoDescription     String?
+  price              Decimal         @default(100.00) @db.Decimal(10, 2)
+  originalPrice      Decimal?        @db.Decimal(10, 2)
   sortOrder          Int             @default(0)
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
@@ -368,4 +387,76 @@ model Certificate {
   verificationCode String     @unique @default(cuid())
 
   @@map("certificates")
+}
+
+// ─────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────
+
+model Payment {
+  id                String        @id @default(cuid())
+
+  // Who paid
+  userId            String
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Learner details captured at time of payment
+  firstName         String
+  lastName          String
+  email             String
+
+  // Payment details
+  status            PaymentStatus @default(PENDING)
+  method            PaymentMethod @default(CARD)
+  currency          String        @default("GBP")
+  subtotal          Decimal       @db.Decimal(10, 2)  // before any discount
+  discount          Decimal       @default(0) @db.Decimal(10, 2)
+  tax               Decimal       @default(0) @db.Decimal(10, 2)
+  totalAmount       Decimal       @db.Decimal(10, 2)  // final charged amount
+
+  // Payment gateway reference (Stripe / PayPal / manual)
+  gatewayReference  String?       // e.g. Stripe payment intent ID
+  gatewayResponse   Json?         // raw gateway response for audit
+  cardLast4         String?       // last 4 digits only — never full card
+  cardBrand         String?       // e.g. "Visa", "Mastercard"
+
+  // Metadata
+  ipAddress         String?
+  userAgent         String?
+  notes             String?
+
+  // Timestamps
+  paidAt            DateTime?     // set when status → PAID
+  refundedAt        DateTime?     // set when status → REFUNDED
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Line items — one per course in the cart
+  items             PaymentItem[]
+
+  @@map("payments")
+}
+
+model PaymentItem {
+  id              String   @id @default(cuid())
+  paymentId       String
+  payment         Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  // Course reference
+  courseId        String
+  courseTitle     String   // cached at time of payment (title may change later)
+  courseSlug      String
+  courseCategory  String?
+
+  // Pricing at time of purchase
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  quantity        Int      @default(1)
+  lineTotal       Decimal  @db.Decimal(10, 2)
+
+  // Access granted by this payment item
+  enrollmentId    String?  // linked to the Enrollment created after payment
+
+  createdAt       DateTime @default(now())
+
+  @@map("payment_items")
 }

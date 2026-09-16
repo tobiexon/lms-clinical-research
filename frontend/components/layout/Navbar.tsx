@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import Logo from './Logo';
+import CartIcon from '@/components/cart/CartIcon';
 
 const NAV_LINKS = [
   { href: '/courses', label: 'All Courses' },
@@ -40,23 +41,26 @@ export default function Navbar() {
 
   const isAdmin = user && ['ADMIN', 'SUPER_ADMIN', 'CONTENT_EDITOR'].includes(user.role);
 
-  // Don't render navbar inside /admin
   if (pathname?.startsWith('/admin')) return null;
 
   return (
-    <header className="sticky top-0 z-50 bg-[#0d2233] shadow-lg">
+    <header
+      className="sticky top-0 z-50 shadow-lg"
+      style={{ height: '110px', backgroundColor: '#055d69' }}
+    >
       {/* Promo bar */}
       <div className="bg-cyan-700 text-white text-center text-xs py-1.5 px-4 font-medium">
         🎓 UK-accredited clinical research courses — ICH GCP · Pharmacovigilance · Regulatory Affairs
       </div>
 
       <div className="max-w-6xl mx-auto px-4">
+        {/* Main nav row */}
         <div className="flex items-center justify-between h-16">
 
           {/* Logo */}
           <Logo variant="navbar" href="/" />
 
-          {/* Desktop nav */}
+          {/* Desktop nav links */}
           <nav className="hidden md:flex items-center gap-1">
             {NAV_LINKS.map((link) => (
               <Link
@@ -73,8 +77,9 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Auth buttons */}
+          {/* Desktop right: cart + auth */}
           <div className="hidden md:flex items-center gap-3">
+            <CartIcon />
             {user ? (
               <>
                 {isAdmin && (
@@ -83,19 +88,16 @@ export default function Navbar() {
                     Admin
                   </Link>
                 )}
-                <Link href="/dashboard"
-                  className="text-sm text-cyan-200 hover:text-white transition-colors">
+                <Link href="/dashboard" className="text-sm text-cyan-200 hover:text-white transition-colors">
                   Hi, {user.firstName}
                 </Link>
-                <button onClick={logout}
-                  className="text-xs text-cyan-400 hover:text-white transition-colors">
+                <button onClick={logout} className="text-xs text-cyan-400 hover:text-white transition-colors">
                   Sign out
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login"
-                  className="text-sm text-cyan-200 hover:text-white px-4 py-2 transition-colors">
+                <Link href="/login" className="text-sm text-cyan-200 hover:text-white px-4 py-2 transition-colors">
                   Login
                 </Link>
                 <Link href="/register"
@@ -106,51 +108,72 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden text-cyan-200 p-2"
-            onClick={() => setMenuOpen(!menuOpen)}
-            aria-label="Toggle menu"
-          >
-            {menuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/>
-              </svg>
-            )}
-          </button>
+          {/* Mobile right: cart + hamburger */}
+          <div className="md:hidden flex items-center gap-2">
+            <CartIcon />
+            <button
+              className="text-cyan-200 p-2"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
+
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile dropdown menu */}
         {menuOpen && (
           <div className="md:hidden border-t border-white/10 py-3 space-y-1 pb-4">
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm text-cyan-200 hover:text-white hover:bg-white/10 rounded-lg">
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm text-cyan-200 hover:text-white hover:bg-white/10 rounded-lg"
+              >
                 {link.label}
               </Link>
             ))}
             <div className="pt-3 border-t border-white/10 flex flex-col gap-2 px-4">
               {user ? (
                 <>
-                  <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-200">My Dashboard</Link>
-                  {isAdmin && <Link href="/admin" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-300">Admin Panel</Link>}
-                  <button onClick={logout} className="text-sm text-left text-cyan-400">Sign out</button>
+                  <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-200">
+                    My Dashboard
+                  </Link>
+                  {isAdmin && (
+                    <Link href="/admin" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-300">
+                      Admin Panel
+                    </Link>
+                  )}
+                  <button onClick={logout} className="text-sm text-left text-cyan-400">
+                    Sign out
+                  </button>
                 </>
               ) : (
                 <>
                   <Link href="/login" onClick={() => setMenuOpen(false)}
-                    className="block text-center py-2 text-sm text-cyan-200 border border-white/20 rounded-lg">Login</Link>
+                    className="block text-center py-2 text-sm text-cyan-200 border border-white/20 rounded-lg">
+                    Login
+                  </Link>
                   <Link href="/register" onClick={() => setMenuOpen(false)}
-                    className="block text-center py-2 text-sm bg-cyan-500 text-white rounded-lg font-semibold">Enrol Now</Link>
+                    className="block text-center py-2 text-sm bg-cyan-500 text-white rounded-lg font-semibold">
+                    Enrol Now
+                  </Link>
                 </>
               )}
             </div>
           </div>
         )}
+
       </div>
     </header>
   );

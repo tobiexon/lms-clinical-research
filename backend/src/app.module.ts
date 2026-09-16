@@ -11,6 +11,7 @@ import { ProgressModule } from './progress/progress.module';
 import { QuizzesModule } from './quizzes/quizzes.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { AdminModule } from './admin/admin.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AdminModule } from './admin/admin.module';
     QuizzesModule,
     CertificatesModule,
     AdminModule,
+    PaymentsModule,
   ],
 })
 export class AppModule {}

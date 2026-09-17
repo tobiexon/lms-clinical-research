@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Body, Param, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Request, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @Controller('payments')
 export class PaymentsController {
@@ -9,14 +10,15 @@ export class PaymentsController {
 
   /**
    * POST /api/v1/payments
-   * Called by checkout page after card is processed.
-   * Creates payment record, enrols user in courses, marks user as PAID.
-   * Protected — user must be logged in.
+   * Guest checkout — no auth required.
+   * If the user is already logged in their userId is extracted from the JWT;
+   * if not, userId is null and the service auto-creates an account.
    */
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard)
   @Post()
   processPayment(@Request() req: any, @Body() dto: CreatePaymentDto) {
-    return this.paymentsService.processPayment(req.user.id, dto);
+    const userId = req.user?.id || null;
+    return this.paymentsService.processPayment(userId, dto);
   }
 
   /**

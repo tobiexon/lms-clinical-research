@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -11,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +15,7 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private notifications: NotificationsService,
   ) {}
 
   // -------------------------------------------------------
@@ -58,6 +55,11 @@ export class AuthService {
     });
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
+
+    // Send welcome email (non-blocking)
+    this.notifications.sendWelcomeEmail({ email: user.email, firstName: user.firstName })
+      .catch(() => {}); // fire-and-forget
+
     return { user, ...tokens };
   }
 
@@ -123,6 +125,63 @@ export class AuthService {
   async logout(token: string) {
     await this.prisma.refreshToken.deleteMany({ where: { token } });
     return { message: 'Logged out successfully' };
+  }
+
+  // -------------------------------------------------------
+  // Generate a magic login token for a user
+  // Used in payment emails — single-use, 48hr expiry
+  // -------------------------------------------------------
+  async generateMagicToken(userId: string): Promise<string> {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48);
+
+    const magic = await this.prisma.magicToken.create({
+      data: { userId, expiresAt },
+    });
+    return magic.token;
+  }
+
+  // -------------------------------------------------------
+  // Magic link login — validate token, return JWT pair
+  // -------------------------------------------------------
+  async magicLogin(token: string) {
+    const magic = await this.prisma.magicToken.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+
+    if (!magic) {
+      throw new UnauthorizedException('Invalid or expired link');
+    }
+    if (magic.used) {
+      throw new UnauthorizedException('This login link has already been used. Please log in normally.');
+    }
+    if (magic.expiresAt < new Date()) {
+      throw new UnauthorizedException('This login link has expired. Please log in with your email and password.');
+    }
+    if (!magic.user.isActive) {
+      throw new UnauthorizedException('Account is inactive');
+    }
+
+    // Mark as used — one-time only
+    await this.prisma.magicToken.update({
+      where: { token },
+      data: { used: true },
+    });
+
+    const tokens = await this.generateTokens(magic.user.id, magic.user.email, magic.user.role);
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        id: magic.user.id,
+        email: magic.user.email,
+        firstName: magic.user.firstName,
+        lastName: magic.user.lastName,
+        role: magic.user.role,
+      },
+    };
   }
 
   // -------------------------------------------------------

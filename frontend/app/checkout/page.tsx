@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/cart-store';
+import { paymentsApi } from '@/lib/api';
 import Cookies from 'js-cookie';
 
 export default function CheckoutPage() {
@@ -37,19 +38,54 @@ export default function CheckoutPage() {
     e.preventDefault();
     setProcessing(true);
 
-    // Simulate payment processing (replace with Stripe later)
-    await new Promise((res) => setTimeout(res, 2000));
-
-    // If not logged in, redirect to register
+    // Check login first
     const token = Cookies.get('access_token');
     if (!token) {
-      router.push('/register?redirect=/checkout');
+      // Redirect to login, then back to checkout after
+      router.push('/login?redirect=/checkout');
+      setProcessing(false);
       return;
     }
 
-    clearCart();
-    setStep('success');
-    setProcessing(false);
+    try {
+      // Extract last 4 digits of card for receipt
+      const cardLast4 = form.cardNumber.replace(/\s/g, '').slice(-4);
+      const cardBrand = getCardBrand(form.cardNumber);
+
+      // Call NestJS payments endpoint
+      await paymentsApi.processPayment({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        cardLast4,
+        cardBrand,
+        items: items.map((item) => ({
+          courseId: item.courseId,
+          courseTitle: item.title,
+          courseSlug: item.slug,
+          courseCategory: item.category,
+          unitPrice: item.price,
+        })),
+      });
+
+      // Success — clear cart and show confirmation
+      clearCart();
+      setStep('success');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Payment failed. Please try again.';
+      alert(msg);
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  // Detect card brand from first digit
+  function getCardBrand(cardNumber: string): string {
+    const num = cardNumber.replace(/\s/g, '');
+    if (num.startsWith('4')) return 'Visa';
+    if (num.startsWith('5') || num.startsWith('2')) return 'Mastercard';
+    if (num.startsWith('3')) return 'Amex';
+    return 'Card';
   }
 
   if (items.length === 0 && step !== 'success') {

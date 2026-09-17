@@ -101,10 +101,10 @@ export default async function HomePage() {
           COURSES SECTION — Viares-style cards
       ══════════════════════════════════════════════════════ */}
       <section className="py-14 px-4 bg-white">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
 
           {/* Section heading + "All Courses" button — matches Viares layout */}
-          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+          <div className="flex items-center justify-center mb-8 flex-wrap gap-4">
             <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 uppercase tracking-tight">
               Your Clinical Research Professional Training Courses &amp; Awards
             </h2>

@@ -90,6 +90,7 @@ model User {
   certificates  Certificate[]
   refreshTokens RefreshToken[]
   payments      Payment[]
+  magicTokens   MagicToken[]
 
   @@map("users")
 }
@@ -459,4 +460,19 @@ model PaymentItem {
   createdAt       DateTime @default(now())
 
   @@map("payment_items")
+}
+
+// ─────────────────────────────────────────
+// MAGIC LOGIN TOKENS (one-time email links)
+// ─────────────────────────────────────────
+model MagicToken {
+  id        String   @id @default(cuid())
+  token     String   @unique @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  used      Boolean  @default(false)
+  expiresAt DateTime // 48 hours from creation
+  createdAt DateTime @default(now())
+
+  @@map("magic_tokens")
 }

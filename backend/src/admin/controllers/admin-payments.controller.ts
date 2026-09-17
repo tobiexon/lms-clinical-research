@@ -63,7 +63,7 @@ export class AdminPaymentsController {
     if (otherPaid === 0) {
       await this.prisma.user.update({
         where: { id: payment.userId },
-        data: { paymentStatus: 'REFUNDED' },
+      data: { paymentStatus: 'REFUNDED' as any },
       });
     }
 

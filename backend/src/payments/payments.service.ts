@@ -1,6 +1,7 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -11,6 +12,7 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     private enrollments: EnrollmentsService,
+    private notifications: NotificationsService,
   ) {}
 
   /**
@@ -111,10 +113,55 @@ export class PaymentsService {
     // ── Step 4: Update user paymentStatus → PAID ──────────
     await this.prisma.user.update({
       where: { id: userId },
-      data: { paymentStatus: 'PAID' },
+      data: { paymentStatus: 'PAID' as any },
     });
 
     this.logger.log(`Payment ${payment.id} confirmed for user ${userId} — status: PAID`);
+
+    // ── Step 5: Send payment confirmation email ────────────
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, firstName: true, lastName: true },
+    });
+
+    if (user) {
+      // Generate magic login token so email button auto-logs them in
+      let magicLoginUrl: string | undefined;
+      try {
+        const magicToken = await this.generateMagicToken(userId);
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        magicLoginUrl = `${frontendUrl}/auth/magic/${magicToken}`;
+      } catch {
+        // Magic token generation failed — fall back to regular dashboard link
+        this.logger.warn('Magic token generation failed — using plain dashboard link');
+      }
+
+      // Payment receipt email with magic link
+      this.notifications.sendPaymentConfirmationEmail({
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        paymentId: paidPayment.id,
+        totalAmount: parseFloat(paidPayment.totalAmount.toString()),
+        currency: paidPayment.currency,
+        paidAt: paidPayment.paidAt!,
+        magicLoginUrl,
+        items: paidPayment.items.map((item) => ({
+          courseTitle: item.courseTitle,
+          unitPrice: parseFloat(item.unitPrice.toString()),
+        })),
+      }).catch(() => {});
+
+      // Individual enrolment confirmation emails
+      for (const item of paidPayment.items) {
+        this.notifications.sendEnrolmentConfirmationEmail({
+          email: user.email,
+          firstName: user.firstName,
+          courseTitle: item.courseTitle,
+          courseSlug: item.courseSlug,
+        }).catch(() => {});
+      }
+    }
 
     return {
       paymentId: paidPayment.id,
@@ -195,5 +242,18 @@ export class PaymentsService {
       pendingCount,
       refundedCount,
     };
+  }
+
+  /**
+   * Generate a one-time magic login token for a user.
+   * Stored in magic_tokens table — 48hr expiry, single use.
+   */
+  private async generateMagicToken(userId: string): Promise<string> {
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 48);
+    const magic = await this.prisma.magicToken.create({
+      data: { userId, expiresAt },
+    });
+    return magic.token;
   }
 }

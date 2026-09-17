@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -33,5 +33,16 @@ export class AuthController {
   @Post('logout')
   async logout(@Body() dto: RefreshTokenDto) {
     return this.authService.logout(dto.refreshToken);
+  }
+
+  /**
+   * GET /api/v1/auth/magic/:token
+   * One-time magic link login — validates token, returns JWT, marks token as used.
+   * Used in payment confirmation emails so users click once and are logged in.
+   */
+  @HttpCode(HttpStatus.OK)
+  @Get('magic/:token')
+  async magicLogin(@Param('token') token: string) {
+    return this.authService.magicLogin(token);
   }
 }

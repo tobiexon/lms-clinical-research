@@ -22,8 +22,8 @@ export class NotificationsService {
     return this.config.get<string>('FROM_EMAIL', 'noreply@clinicalresearchnexus.com');
   }
 
-  private get fromName(): string {
-    return this.config.get<string>('FROM_NAME', 'Clinical Research Nexus');
+  private get frontendUrl(): string {
+    return this.config.get<string>('FRONTEND_URL', \\');
   }
 
   private async send(to: string, subject: string, html: string): Promise<void> {
@@ -67,6 +67,89 @@ export class NotificationsService {
   }
 
   // ─────────────────────────────────────────────────────────────
+  // NEW ACCOUNT CREATED VIA GUEST CHECKOUT
+  // Sent when someone pays without being logged in — auto-created account
+  // ─────────────────────────────────────────────────────────────
+  async sendNewAccountWithPaymentEmail(data: {
+    email: string;
+    firstName: string;
+    temporaryPassword: string;
+    magicLoginUrl?: string;
+    paymentId: string;
+    totalAmount: number;
+    currency: string;
+    paidAt: Date;
+    items: { courseTitle: string; unitPrice: number }[];
+  }) {
+    const subject = `Welcome to Clinical Research Nexus — Payment Confirmed #${data.paymentId.slice(-8).toUpperCase()}`;
+    const accessUrl = data.magicLoginUrl || \\/login';
+
+    const itemRows = data.items.map((item) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;color:#333">${item.courseTitle}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;color:#333;text-align:right">
+          ${data.currency} ${item.unitPrice.toFixed(2)}
+        </td>
+      </tr>
+    `).join('');
+
+    const html = this.baseTemplate(`
+      <h1 style="color:#0d2233;margin:0 0 4px">Welcome &amp; Payment Confirmed ✓</h1>
+      <p style="color:#888;font-size:13px;margin:0 0 24px">
+        Receipt #${data.paymentId.slice(-8).toUpperCase()} · 
+        ${new Date(data.paidAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+      </p>
+
+      <p style="color:#555;font-size:15px;margin:0 0 20px">
+        Hi <strong>${data.firstName}</strong>, your payment is confirmed and your account has been created. 
+        You now have access to:
+      </p>
+
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
+        <thead>
+          <tr>
+            <th style="text-align:left;padding:8px 0;border-bottom:2px solid #0d2233;color:#0d2233;font-size:13px">Course</th>
+            <th style="text-align:right;padding:8px 0;border-bottom:2px solid #0d2233;color:#0d2233;font-size:13px">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+        <tfoot>
+          <tr>
+            <td style="padding:12px 0 0;font-weight:bold;color:#0d2233;font-size:16px">Total Paid</td>
+            <td style="padding:12px 0 0;font-weight:bold;color:#0d2233;font-size:16px;text-align:right">
+              ${data.currency} ${data.totalAmount.toFixed(2)}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style="background:#f0f9ff;border:1px solid #c9a84c;padding:16px 20px;border-radius:8px;margin:0 0 20px">
+        <p style="margin:0 0 6px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Your Login Credentials</p>
+        <p style="margin:0 0 4px;font-size:14px;color:#333">
+          <strong>Email:</strong> ${data.email}
+        </p>
+        <p style="margin:0;font-size:14px;color:#333">
+          <strong>Temporary Password:</strong>
+          <span style="font-family:monospace;background:#eee;padding:2px 8px;border-radius:4px;font-size:15px;margin-left:8px">${data.temporaryPassword}</span>
+        </p>
+      </div>
+
+      ${this.ctaButton('Access My Courses Now →', accessUrl)}
+
+      <p style="color:#888;font-size:12px;margin:10px 0 20px">
+        ☝️ This button logs you in automatically (one-time use, valid 48 hours).
+        After that, use your email and password above to log in at 
+        <a href=`${this.frontendUrl}/login" style="color:#c9a84c">clinicalresearchnexus.com</a>.
+      </p>
+
+      <p style="color:#888;font-size:13px;margin:0">
+        Questions? <a href="mailto:support@clinicalresearchnexus.com" style="color:#c9a84c">support@clinicalresearchnexus.com</a>
+      </p>
+    `);
+    return this.send(data.email, subject, html);
+  }
+
+  // ─────────────────────────────────────────────────────────────
   // WELCOME EMAIL — sent on registration
   // ─────────────────────────────────────────────────────────────
   async sendWelcomeEmail(user: { email: string; firstName: string }) {
@@ -80,7 +163,7 @@ export class NotificationsService {
       <p style="color:#555;font-size:15px;margin:0 0 24px">
         Browse and enrol in our ICH GCP, Pharmacovigilance, Regulatory Affairs, and CRA training courses.
       </p>
-      ${this.ctaButton('Browse Courses', 'http://localhost:3000/courses')}
+      ${this.ctaButton('Browse Courses', \\/courses')}
       <p style="color:#888;font-size:13px;margin:24px 0 0">
         If you didn't create this account, please ignore this email.
       </p>
@@ -113,7 +196,7 @@ export class NotificationsService {
     `).join('');
 
     // Use magic link if available, otherwise standard dashboard link
-    const dashboardUrl = data.magicLoginUrl || 'http://localhost:3000/dashboard';
+    const dashboardUrl = data.magicLoginUrl || \\/dashboard';
     const buttonText = data.magicLoginUrl ? 'Access My Courses Now →' : 'Go to My Dashboard';
 
     const html = this.baseTemplate(`
@@ -177,7 +260,7 @@ export class NotificationsService {
       <p style="color:#555;font-size:14px;margin:0 0 24px">
         You have <strong>lifetime access</strong> to all course materials and a certificate upon completion.
       </p>
-      ${this.ctaButton('Start Learning Now', `http://localhost:3000/courses/${data.courseSlug}`)}
+      ${this.ctaButton('Start Learning Now', `${this.frontendUrl}/courses/${data.courseSlug}`)}
     `);
     return this.send(data.email, subject, html);
   }
@@ -203,7 +286,7 @@ export class NotificationsService {
           ${data.verificationCode.slice(-12).toUpperCase()}
         </p>
       </div>
-      ${this.ctaButton('Download My Certificate', 'http://localhost:3000/certificates')}
+      ${this.ctaButton('Download My Certificate', \\/certificates')}
     `);
     return this.send(data.email, subject, html);
   }
@@ -219,7 +302,7 @@ export class NotificationsService {
         You're now subscribed! You'll receive new course announcements, UK regulatory updates, 
         career tips, and exclusive discounts.
       </p>
-      ${this.ctaButton('Explore Courses', 'http://localhost:3000/courses')}
+      ${this.ctaButton('Explore Courses', \\/courses')}
     `);
     return this.send(email, subject, html);
   }
@@ -228,7 +311,7 @@ export class NotificationsService {
   // PASSWORD RESET
   // ─────────────────────────────────────────────────────────────
   async sendPasswordResetEmail(data: { email: string; firstName: string; resetToken: string }) {
-    const resetUrl = `http://localhost:3000/reset-password?token=${data.resetToken}`;
+    const resetUrl = `${this.frontendUrl}/reset-password?token=${data.resetToken}`;
     const subject = 'Reset your Clinical Research Nexus password';
     const html = this.baseTemplate(`
       <h1 style="color:#0d2233;margin:0 0 8px">Password Reset Request</h1>

@@ -1,23 +1,27 @@
-# ── Dependencies ────────────────────────────
+# Dependencies
 node_modules/
 
-# ── Build output ────────────────────────────
+# Build output
 dist/
 
-# ── Environment — NEVER commit these ────────
+# Environment — NEVER commit these
 .env
 .env.local
 .env.production
 .env.staging
 
-# ── Prisma generated client ──────────────────
-# (regenerated via: node prisma/generate)
-# node_modules/@prisma/client is already covered above
+# Test scripts (contain credentials)
+test-email.js
 
-# ── Logs ────────────────────────────────────
+# Generated files
+*.txt
+gen_out.txt
+gen_err.txt
+
+# Logs
 *.log
 npm-debug.log*
 
-# ── OS ──────────────────────────────────────
+# OS
 .DS_Store
 Thumbs.db

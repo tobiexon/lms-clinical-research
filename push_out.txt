@@ -1,0 +1,6 @@
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Datasource "db": PostgreSQL database "exon_lms", schema "public" at "localhost:5433"
+
+The database is already in sync with the Prisma schema.
+

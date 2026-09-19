@@ -4,11 +4,19 @@ import { AuthGuard } from '@nestjs/passport';
 @Injectable()
 export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext) {
-    return super.canActivate(context);
+    // Wrap in Promise so we can catch errors safely
+    try {
+      const result = super.canActivate(context);
+      if (result instanceof Promise) {
+        return result.catch(() => true);
+      }
+      return result;
+    } catch {
+      return true;
+    }
   }
 
-  handleRequest(err: any, user: any) {
-    // Return user if authenticated, null if not — never throw
+  handleRequest(_err: any, user: any) {
     return user || null;
   }
 }

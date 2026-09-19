@@ -10,6 +10,7 @@
     "start": "node node_modules/@nestjs/cli/bin/nest.js start",
     "start:dev": "node node_modules/@nestjs/cli/bin/nest.js start --watch",
     "start:prod": "node dist/main",
+    "postinstall": "node node_modules/prisma/build/index.js generate",
     "db:push": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/prisma/build/index.js db push',{timeout:30000,env:{...process.env}}).toString())\"",
     "db:generate": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/prisma/build/index.js generate',{timeout:30000,env:{...process.env}}).toString())\"",
     "db:studio": "node node_modules/prisma/build/index.js studio",
@@ -32,6 +33,7 @@
     "class-transformer": "^0.5.1",
     "helmet": "^7.1.0",
     "nodemailer": "^6.9.14",
+    "@nestjs/platform-express": "^10.3.0",
     "reflect-metadata": "^0.2.1",
     "rxjs": "^7.8.1"
   },

@@ -1,8 +1,8 @@
 # Dependencies
 node_modules/
 
-# Build output
-dist/
+# Build output — committed to repo for Render deployment
+# dist/
 
 # Environment — NEVER commit these
 .env

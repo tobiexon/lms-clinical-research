@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Body, Param, Request, UseGuards } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreatePaymentDto, CreatePaymentIntentDto } from './dto/create-payment.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
@@ -9,10 +9,23 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   /**
+   * POST /api/v1/payments/create-intent
+   * Step 1: Create a Stripe PaymentIntent. Returns clientSecret to the
+   * frontend so Stripe Elements can collect card details securely.
+   * No auth required — works for guest checkout too.
+   */
+  @UseGuards(OptionalJwtAuthGuard)
+  @Post('create-intent')
+  createPaymentIntent(@Body() dto: CreatePaymentIntentDto) {
+    return this.paymentsService.createPaymentIntent(dto);
+  }
+
+  /**
    * POST /api/v1/payments
+   * Step 2: Called after Stripe confirms the payment on the frontend.
+   * Receives the gatewayReference (PaymentIntent ID) so the backend can
+   * verify it with Stripe, then creates enrolments.
    * Guest checkout — no auth required.
-   * If the user is already logged in their userId is extracted from the JWT;
-   * if not, userId is null and the service auto-creates an account.
    */
   @UseGuards(OptionalJwtAuthGuard)
   @Post()

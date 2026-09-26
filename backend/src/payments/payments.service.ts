@@ -2,31 +2,103 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { CreatePaymentDto } from './dto/create-payment.dto';
+import { CreatePaymentDto, CreatePaymentIntentDto } from './dto/create-payment.dto';
 import { Decimal } from '@prisma/client/runtime/library';
 import * as bcrypt from 'bcrypt';
+import * as Stripe from 'stripe';
 
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
+  private readonly stripe: Stripe | null;
 
   constructor(
     private prisma: PrismaService,
     private enrollments: EnrollmentsService,
     private notifications: NotificationsService,
-  ) {}
+  ) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (key) {
+      this.stripe = new Stripe(key, { apiVersion: '2026-08-26.dahlia' });
+    } else {
+      this.stripe = null;
+      this.logger.warn('STRIPE_SECRET_KEY not set — Stripe integration disabled');
+    }
+  }
 
   /**
-   * Process a payment:
-   * 1. Create Payment record (PENDING)
-   * 2. Create PaymentItem records for each course
-   * 3. Enrol user in each course
-   * 4. Mark Payment as PAID
-   * 5. Update User.paymentStatus to PAID
+   * Step 1 of Stripe checkout:
+   * Create a PaymentIntent in GBP. Stripe handles currency conversion
+   * automatically — cardholders outside the UK are charged in GBP but their
+   * banks debit the equivalent in their local currency.
+   */
+  async createPaymentIntent(dto: CreatePaymentIntentDto) {
+    if (!this.stripe) {
+      throw new BadRequestException('Payment gateway not configured');
+    }
+    if (!dto.items || dto.items.length === 0) {
+      throw new BadRequestException('No items in payment');
+    }
+
+    const totalPence = Math.round(
+      dto.items.reduce((sum, item) => sum + item.unitPrice, 0) * 100,
+    );
+
+    const intent = await this.stripe.paymentIntents.create({
+      amount: totalPence,           // GBP pence
+      currency: 'gbp',
+      automatic_payment_methods: { enabled: true }, // supports cards, wallets worldwide
+      receipt_email: dto.email,
+      metadata: {
+        courseIds: dto.items.map((i) => i.courseId).join(','),
+        courseTitles: dto.items.map((i) => i.courseTitle).join(' | ').slice(0, 500),
+      },
+    });
+
+    return {
+      clientSecret: intent.client_secret,
+      paymentIntentId: intent.id,
+      amount: totalPence,
+      currency: 'gbp',
+    };
+  }
+
+  /**
+   * Step 2 of Stripe checkout:
+   * Called after the frontend confirms payment with Stripe.
+   * Verifies the PaymentIntent status with Stripe, then creates enrolments.
+   *
+   * Process:
+   * 1. Verify PaymentIntent status = 'succeeded' with Stripe
+   * 2. Create Payment record (PENDING)
+   * 3. Create PaymentItem records for each course
+   * 4. Enrol user in each course
+   * 5. Mark Payment as PAID
+   * 6. Update User.paymentStatus to PAID
    */
   async processPayment(userId: string | null, dto: CreatePaymentDto) {
     if (!dto.items || dto.items.length === 0) {
       throw new BadRequestException('No items in payment');
+    }
+
+    // ── Verify payment with Stripe ────────────────────────
+    // If Stripe is configured, confirm the PaymentIntent actually succeeded
+    // before enrolling the user. This prevents fraudulent "free enrolment" calls.
+    if (this.stripe && dto.gatewayReference) {
+      const intent = await this.stripe.paymentIntents.retrieve(dto.gatewayReference);
+      if (intent.status !== 'succeeded') {
+        throw new BadRequestException(
+          `Payment not confirmed — Stripe status: ${intent.status}`,
+        );
+      }
+      // Pull card details from Stripe rather than trusting the client
+      const charge = intent.latest_charge as Stripe.Charge | null;
+      if (charge && typeof charge === 'object' && charge.payment_method_details?.card) {
+        dto.cardLast4 = charge.payment_method_details.card.last4 ?? dto.cardLast4;
+        dto.cardBrand = charge.payment_method_details.card.brand ?? dto.cardBrand;
+      }
+    } else if (this.stripe && !dto.gatewayReference) {
+      throw new BadRequestException('Missing Stripe payment reference');
     }
 
     // ── Handle guest checkout — auto-create account ───────

@@ -15,7 +15,7 @@ const variantStyles: Record<string, React.CSSProperties> = {
     color: 'transparent',
     height: '75px',
     width: 'auto',
-    marginTop: '14%',
+    marginTop: '15%',
   },
   footer: {
     color: 'transparent',

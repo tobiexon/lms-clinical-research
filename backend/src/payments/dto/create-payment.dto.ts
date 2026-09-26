@@ -37,10 +37,10 @@ export class CreatePaymentDto {
   @Type(() => PaymentItemDto)
   items: PaymentItemDto[];
 
-  // Payment method details (for real gateway — Stripe etc.)
+  // Stripe payment method — set after Stripe confirms payment on the frontend
   @IsOptional()
   @IsString()
-  gatewayReference?: string;  // Stripe paymentIntent.id etc.
+  gatewayReference?: string;  // Stripe paymentIntent.id
 
   @IsOptional()
   @IsString()
@@ -53,4 +53,15 @@ export class CreatePaymentDto {
   @IsOptional()
   @IsString()
   ipAddress?: string;
+}
+
+/** DTO for creating a Stripe PaymentIntent (step 1 of checkout) */
+export class CreatePaymentIntentDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PaymentItemDto)
+  items: PaymentItemDto[];
+
+  @IsEmail()
+  email: string;
 }

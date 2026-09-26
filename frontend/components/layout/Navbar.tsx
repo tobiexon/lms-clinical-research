@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import Logo from './Logo';
 import CartIcon from '@/components/cart/CartIcon';
+import MyCoursesMenu from '@/components/course/MyCoursesMenu';
 
 const NAV_LINKS = [
   { href: '/courses', label: 'All Courses' },
@@ -82,6 +83,8 @@ export default function Navbar() {
             <CartIcon />
             {user ? (
               <>
+                {/* My Courses dropdown — only for logged-in users */}
+                <MyCoursesMenu />
                 {isAdmin && (
                   <Link href="/admin"
                     className="text-xs text-cyan-300 hover:text-white px-3 py-1.5 rounded border border-cyan-800 hover:border-cyan-500 transition-colors">

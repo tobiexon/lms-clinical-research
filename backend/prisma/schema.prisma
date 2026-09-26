@@ -476,3 +476,18 @@ model MagicToken {
 
   @@map("magic_tokens")
 }
+
+// ─────────────────────────────────────────
+// NEWSLETTER SUBSCRIBERS
+// ─────────────────────────────────────────
+model NewsletterSubscriber {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  isActive    Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+  unsubscribedAt DateTime?
+  ipAddress   String?
+  source      String?  @default("footer") // where they subscribed from
+
+  @@map("newsletter_subscribers")
+}

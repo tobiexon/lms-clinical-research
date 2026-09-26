@@ -124,8 +124,27 @@ export const certificatesApi = {
   verify: (code: string) => api.get(`/certificates/verify/${code}`),
 };
 
+// ── Newsletter subscription ───────────────────────────────────
+export const subscribeApi = {
+  subscribe: (data: { email: string; source?: string }) =>
+    api.post('/subscribe', data),
+};
+
 // ── Payments ──────────────────────────────────────────────────
 export const paymentsApi = {
+  /** Step 1 — get a Stripe PaymentIntent client secret */
+  createPaymentIntent: (data: {
+    email: string;
+    items: {
+      courseId: string;
+      courseTitle: string;
+      courseSlug: string;
+      courseCategory?: string;
+      unitPrice: number;
+    }[];
+  }) => api.post('/payments/create-intent', data),
+
+  /** Step 2 — confirm enrolment after Stripe payment succeeds */
   processPayment: (data: {
     firstName: string;
     lastName: string;

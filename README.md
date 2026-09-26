@@ -93,3 +93,14 @@ Key variables:
 
 The global `@nestjs/cli` has a known issue on Node 24. All npm scripts call the
 local nest binary directly — `npm run start:dev` works without a global install.
+
+## Note that a free stripe account is created. Stripe is used for CC debit or charge.
+# Create a free Stripe account at dashboard.stripe.com
+Go to Developers → API Keys and copy your test keys
+In .env
+, replace sk_test_your_stripe_secret_key_here with your real sk_test_... key
+In 
+.env.local
+, replace pk_test_your_stripe_publishable_key_here with your real pk_test_... key
+Restart both the backend and frontend dev servers
+For testing, use Stripe's test cards: 4242 4242 4242 4242 (any future expiry, any CVV) simulates a successful payment from any country.

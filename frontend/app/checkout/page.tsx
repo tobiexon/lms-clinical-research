@@ -2,63 +2,173 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useCartStore } from '@/lib/cart-store';
+import { useCartStore, CartItem } from '@/lib/cart-store';
 import { paymentsApi } from '@/lib/api';
 import Cookies from 'js-cookie';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from '@stripe/react-stripe-js';
 
+// Load Stripe outside of component renders for performance
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+);
+
+// ─── Inner checkout form (rendered inside <Elements>) ──────────────────────
+interface CheckoutFormProps {
+  form: { firstName: string; lastName: string; email: string };
+  items: CartItem[];
+  total: number;
+  onSuccess: () => void;
+}
+
+function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [processing, setProcessing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  async function handlePay(e: React.FormEvent) {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setProcessing(true);
+    setErrorMsg(null);
+
+    try {
+      // Confirm the payment with Stripe — card details never touch our server
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        redirect: 'if_required', // only redirect for bank redirects (iDEAL etc.)
+        confirmParams: {
+          payment_method_data: {
+            billing_details: {
+              name: `${form.firstName} ${form.lastName}`,
+              email: form.email,
+            },
+          },
+        },
+      });
+
+      if (error) {
+        setErrorMsg(error.message ?? 'Payment failed. Please try again.');
+        return;
+      }
+
+      if (paymentIntent?.status === 'succeeded') {
+        // Tell our backend to enrol the user
+        await paymentsApi.processPayment({
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          gatewayReference: paymentIntent.id,
+          items: items.map((item) => ({
+            courseId: item.courseId,
+            courseTitle: item.title,
+            courseSlug: item.slug,
+            courseCategory: item.category,
+            unitPrice: item.price,
+          })),
+        });
+
+        onSuccess();
+      }
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || 'Something went wrong. Please try again.';
+      setErrorMsg(msg);
+    } finally {
+      setProcessing(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handlePay} className="space-y-5">
+      {/* Stripe Payment Element — adapts to card type, country, wallet etc. */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-gray-900 text-lg">Payment Details</h2>
+          {/* Card logos */}
+          <div className="flex gap-1.5 items-center text-gray-400">
+            <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">VISA</span>
+            <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">MC</span>
+            <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">AMEX</span>
+            <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">+more</span>
+          </div>
+        </div>
+
+        {/* Stripe-hosted card fields — PCI-compliant, works globally */}
+        <PaymentElement
+          options={{
+            layout: 'tabs',
+            fields: { billingDetails: { email: 'never' } }, // we pass email ourselves
+          }}
+        />
+
+        {/* Security note */}
+        <div className="flex items-center gap-2 mt-4 text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
+          <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+          </svg>
+          Payments secured by Stripe. Your card details never touch our servers.
+          Prices shown in GBP — your bank will convert to your local currency.
+        </div>
+      </div>
+
+      {errorMsg && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+          {errorMsg}
+        </div>
+      )}
+
+      <button
+        type="submit"
+        disabled={processing || !stripe}
+        className="w-full bg-[#c9a84c] hover:bg-[#b8973b] disabled:opacity-60 text-white font-extrabold py-4 rounded-xl text-base uppercase tracking-wide transition-colors shadow-lg"
+      >
+        {processing ? 'Processing Payment...' : `Pay £${total.toFixed(2)} — Enrol Now`}
+      </button>
+
+      <p className="text-xs text-center text-gray-400">
+        By completing your purchase you agree to our{' '}
+        <Link href="/terms" className="underline hover:text-gray-600">Terms & Conditions</Link>
+        {' '}and{' '}
+        <Link href="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>.
+        5-day money-back guarantee.
+      </p>
+    </form>
+  );
+}
+
+// ─── Outer page — handles contact form + PaymentIntent creation ────────────
 export default function CheckoutPage() {
   const { items, removeItem, total, clearCart } = useCartStore();
-  const router = useRouter();
-  const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState<'review' | 'payment' | 'success'>('review');
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [intentError, setIntentError] = useState<string | null>(null);
+  const [creatingIntent, setCreatingIntent] = useState(false);
 
   const [form, setForm] = useState({
-    firstName: '', lastName: '', email: '',
-    cardNumber: '', expiry: '', cvv: '', nameOnCard: '',
+    firstName: '',
+    lastName: '',
+    email: '',
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  // Format card number with spaces
-  function formatCard(val: string) {
-    return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
-  }
-
-  // Format MM/YY
-  function formatExpiry(val: string) {
-    const digits = val.replace(/\D/g, '').slice(0, 4);
-    if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
-  }
-
-  async function handlePay(e: React.FormEvent) {
+  async function handleContactSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setProcessing(true);
-
-    // Check login first
-    const token = Cookies.get('access_token');
-    if (!token) {
-      // Redirect to login, then back to checkout after
-      router.push('/login?redirect=/checkout');
-      setProcessing(false);
-      return;
-    }
+    setCreatingIntent(true);
+    setIntentError(null);
 
     try {
-      // Extract last 4 digits of card for receipt
-      const cardLast4 = form.cardNumber.replace(/\s/g, '').slice(-4);
-      const cardBrand = getCardBrand(form.cardNumber);
-
-      // Call NestJS payments endpoint
-      await paymentsApi.processPayment({
-        firstName: form.firstName,
-        lastName: form.lastName,
+      const { data } = await paymentsApi.createPaymentIntent({
         email: form.email,
-        cardLast4,
-        cardBrand,
         items: items.map((item) => ({
           courseId: item.courseId,
           courseTitle: item.title,
@@ -67,27 +177,23 @@ export default function CheckoutPage() {
           unitPrice: item.price,
         })),
       });
-
-      // Success — clear cart and show confirmation
-      clearCart();
-      setStep('success');
+      setClientSecret(data.clientSecret);
+      setStep('payment');
     } catch (err: any) {
-      const msg = err?.response?.data?.message || 'Payment failed. Please try again.';
-      alert(msg);
+      setIntentError(
+        err?.response?.data?.message || 'Could not initialise payment. Please try again.',
+      );
     } finally {
-      setProcessing(false);
+      setCreatingIntent(false);
     }
   }
 
-  // Detect card brand from first digit
-  function getCardBrand(cardNumber: string): string {
-    const num = cardNumber.replace(/\s/g, '');
-    if (num.startsWith('4')) return 'Visa';
-    if (num.startsWith('5') || num.startsWith('2')) return 'Mastercard';
-    if (num.startsWith('3')) return 'Amex';
-    return 'Card';
+  function handleSuccess() {
+    clearCart();
+    setStep('success');
   }
 
+  // ── Empty cart ──────────────────────────────────────────────
   if (items.length === 0 && step !== 'success') {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -103,6 +209,7 @@ export default function CheckoutPage() {
     );
   }
 
+  // ── Success ─────────────────────────────────────────────────
   if (step === 'success') {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -134,6 +241,7 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-5xl mx-auto">
+
         {/* Header */}
         <div className="mb-8">
           <Link href="/courses" className="text-sm text-[#c9a84c] hover:underline">← Back to courses</Link>
@@ -142,108 +250,91 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-          {/* ── Left: payment form ── */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handlePay} className="space-y-6">
+          {/* ── Left: forms ── */}
+          <div className="lg:col-span-2 space-y-6">
 
-              {/* Contact details */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="font-bold text-gray-900 mb-4 text-lg">Contact Information</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                    <input required name="firstName" value={form.firstName} onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
-                      placeholder="John" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                    <input required name="lastName" value={form.lastName} onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
-                      placeholder="Smith" />
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <input required type="email" name="email" value={form.email} onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
-                    placeholder="john@example.com" />
-                  <p className="text-xs text-gray-400 mt-1">Your receipt and access details will be sent here</p>
-                </div>
-              </div>
+            {/* Step 1 — Contact information */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="font-bold text-gray-900 mb-4 text-lg">
+                {step === 'payment' ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xs">✓</span>
+                    Contact Information
+                  </span>
+                ) : 'Contact Information'}
+              </h2>
 
-              {/* Payment details */}
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-bold text-gray-900 text-lg">Payment Details</h2>
-                  <div className="flex gap-2 text-gray-400">
-                    <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">VISA</span>
-                    <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">MC</span>
-                    <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">AMEX</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name on Card</label>
-                    <input required name="nameOnCard" value={form.nameOnCard} onChange={handleChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
-                      placeholder="John Smith" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
-                    <input required name="cardNumber"
-                      value={form.cardNumber}
-                      onChange={(e) => setForm({ ...form, cardNumber: formatCard(e.target.value) })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c] font-mono tracking-wider"
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19} />
-                  </div>
+              {step === 'review' ? (
+                <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                      <input required name="expiry"
-                        value={form.expiry}
-                        onChange={(e) => setForm({ ...form, expiry: formatExpiry(e.target.value) })}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                      <input required name="firstName" value={form.firstName} onChange={handleChange}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
-                        placeholder="MM/YY" maxLength={5} />
+                        placeholder="John" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
-                      <input required name="cvv" value={form.cvv}
-                        onChange={(e) => setForm({ ...form, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                      <input required name="lastName" value={form.lastName} onChange={handleChange}
                         className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
-                        placeholder="123" maxLength={4} type="password" />
+                        placeholder="Smith" />
                     </div>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input required type="email" name="email" value={form.email} onChange={handleChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
+                      placeholder="john@example.com" />
+                    <p className="text-xs text-gray-400 mt-1">Your receipt and access details will be sent here</p>
+                  </div>
+
+                  {intentError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                      {intentError}
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={creatingIntent}
+                    className="w-full bg-[#0d2233] hover:bg-[#1a3a5c] disabled:opacity-60 text-white font-bold py-3 rounded-lg transition-colors">
+                    {creatingIntent ? 'Setting up payment…' : 'Continue to Payment →'}
+                  </button>
+                </form>
+              ) : (
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p><span className="font-medium">{form.firstName} {form.lastName}</span></p>
+                  <p>{form.email}</p>
+                  <button onClick={() => setStep('review')} className="text-xs text-[#c9a84c] hover:underline mt-1">
+                    Edit
+                  </button>
                 </div>
+              )}
+            </div>
 
-                {/* Security note */}
-                <div className="flex items-center gap-2 mt-4 text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
-                  <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                  </svg>
-                  Your payment is secured with 256-bit SSL encryption. We never store your card details.
-                </div>
-              </div>
-
-              {/* Submit */}
-              <button type="submit" disabled={processing}
-                className="w-full bg-[#c9a84c] hover:bg-[#b8973b] disabled:opacity-60 text-white font-extrabold py-4 rounded-xl text-base uppercase tracking-wide transition-colors shadow-lg">
-                {processing
-                  ? 'Processing Payment...'
-                  : `Pay £${total().toFixed(2)} — Enrol Now`
-                }
-              </button>
-
-              <p className="text-xs text-center text-gray-400">
-                By completing your purchase you agree to our{' '}
-                <Link href="/terms" className="underline hover:text-gray-600">Terms & Conditions</Link>
-                {' '}and{' '}
-                <Link href="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>.
-                5-day money-back guarantee.
-              </p>
-            </form>
+            {/* Step 2 — Stripe payment form */}
+            {step === 'payment' && clientSecret && (
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: {
+                    theme: 'stripe',
+                    variables: {
+                      colorPrimary: '#c9a84c',
+                      colorBackground: '#ffffff',
+                      borderRadius: '8px',
+                      fontFamily: 'inherit',
+                    },
+                  },
+                }}
+              >
+                <CheckoutForm
+                  form={form}
+                  items={items}
+                  total={total()}
+                  onSuccess={handleSuccess}
+                />
+              </Elements>
+            )}
           </div>
 
           {/* ── Right: order summary ── */}
@@ -251,7 +342,9 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm sticky top-6 overflow-hidden">
               <div className="bg-[#0d2233] px-5 py-4">
                 <h2 className="text-white font-bold">Order Summary</h2>
-                <p className="text-cyan-400 text-xs mt-0.5">{items.length} course{items.length !== 1 ? 's' : ''}</p>
+                <p className="text-cyan-400 text-xs mt-0.5">
+                  {items.length} course{items.length !== 1 ? 's' : ''}
+                </p>
               </div>
 
               <div className="divide-y divide-gray-100">
@@ -265,10 +358,12 @@ export default function CheckoutPage() {
                       {item.category && <p className="text-xs text-gray-400 mt-0.5">{item.category}</p>}
                       <div className="flex items-center justify-between mt-1.5">
                         <span className="text-sm font-extrabold text-[#0d2233]">£{item.price.toFixed(2)}</span>
-                        <button onClick={() => removeItem(item.courseId)}
-                          className="text-xs text-gray-400 hover:text-red-400 transition-colors">
-                          Remove
-                        </button>
+                        {step === 'review' && (
+                          <button onClick={() => removeItem(item.courseId)}
+                            className="text-xs text-gray-400 hover:text-red-400 transition-colors">
+                            Remove
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -289,20 +384,24 @@ export default function CheckoutPage() {
                   <span>Total</span>
                   <span className="text-[#0d2233]">£{total().toFixed(2)}</span>
                 </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Charged in GBP — your bank converts to your local currency at the prevailing rate.
+                </p>
               </div>
 
               {/* What's included */}
               <div className="p-4 border-t border-gray-100">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Included with every course</p>
-                {['Lifetime access', 'Certificate of completion', 'Downloadable resources', '5-day money-back guarantee'].map((item) => (
-                  <div key={item} className="flex items-center gap-2 py-1">
+                {['Lifetime access', 'Certificate of completion', 'Downloadable resources', '5-day money-back guarantee'].map((benefit) => (
+                  <div key={benefit} className="flex items-center gap-2 py-1">
                     <span className="text-green-500 text-xs">✓</span>
-                    <span className="text-xs text-gray-600">{item}</span>
+                    <span className="text-xs text-gray-600">{benefit}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
+
         </div>
       </div>
     </main>

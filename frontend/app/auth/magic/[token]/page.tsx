@@ -37,6 +37,13 @@ export default function MagicLoginPage() {
 
     async function login() {
       try {
+        // If already logged in, just go to dashboard
+        const existingToken = document.cookie.includes('access_token');
+        if (existingToken) {
+          router.replace('/dashboard');
+          return;
+        }
+
         const res = await fetch(`${API}/api/v1/auth/magic/${token}`);
         const data = await res.json();
 
@@ -93,15 +100,20 @@ export default function MagicLoginPage() {
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Link Expired or Already Used</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Link Already Used</h1>
         <p className="text-gray-500 text-sm mb-6">{errorMsg}</p>
         <div className="space-y-3">
-          <a href="/login"
+          {/* If already logged in, go straight to dashboard */}
+          <a href="/dashboard"
             className="block w-full bg-[#c9a84c] hover:bg-[#b8973b] text-white font-bold py-3 rounded-lg text-sm transition-colors uppercase tracking-wide">
-            Log In to My Account
+            Go to My Dashboard
+          </a>
+          <a href="/login"
+            className="block w-full border border-gray-300 text-gray-600 hover:bg-gray-50 py-3 rounded-lg text-sm transition-colors">
+            Log In with Email &amp; Password
           </a>
           <a href="/courses"
-            className="block w-full border border-gray-300 text-gray-600 hover:bg-gray-50 py-3 rounded-lg text-sm transition-colors">
+            className="block w-full border border-gray-200 text-gray-400 hover:bg-gray-50 py-3 rounded-lg text-sm transition-colors">
             Browse Courses
           </a>
         </div>

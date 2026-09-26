@@ -1,9 +1,35 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Logo from './Logo';
+import { subscribeApi } from '@/lib/api';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  async function handleSubscribe(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setStatus('loading');
+    setErrorMsg('');
+
+    try {
+      await subscribeApi.subscribe({ email: email.trim(), source: 'footer' });
+      setStatus('success');
+      setEmail('');
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        'Something went wrong. Please try again.';
+      setErrorMsg(Array.isArray(msg) ? msg.join(', ') : msg);
+      setStatus('error');
+    }
+  }
+
   return (
     <footer className="bg-primary-950 text-primary-300">
 
@@ -16,19 +42,64 @@ export default function Footer() {
           <p className="text-primary-400 text-sm mb-5">
             Get new course updates, UK regulatory news, and career tips delivered to your inbox.
           </p>
-          <form className="flex gap-2 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
-            <input
-              type="email"
-              placeholder="Your email address"
-              className="flex-1 px-4 py-2.5 rounded-lg bg-primary-900 border border-primary-700 text-white placeholder-primary-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-            <button
-              type="submit"
-              className="bg-primary-500 hover:bg-primary-400 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
-            >
-              Subscribe
-            </button>
-          </form>
+
+          {status === 'success' ? (
+            /* ── Success state ── */
+            <div className="max-w-md mx-auto flex items-start gap-3 bg-green-900/40 border border-green-700 rounded-xl px-5 py-4 text-left">
+              <span className="text-green-400 text-xl mt-0.5">✓</span>
+              <div>
+                <p className="text-green-300 font-semibold text-sm">
+                  You&apos;re subscribed!
+                </p>
+                <p className="text-green-400/80 text-xs mt-0.5">
+                  A confirmation email is on its way. Check your inbox (and spam folder just in case).
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* ── Form state ── */
+            <>
+              <form
+                className="flex gap-2 max-w-md mx-auto"
+                onSubmit={handleSubscribe}
+              >
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (status === 'error') setStatus('idle');
+                  }}
+                  placeholder="Your email address"
+                  disabled={status === 'loading'}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-primary-900 border border-primary-700 text-white placeholder-primary-500 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-60"
+                />
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="bg-primary-500 hover:bg-primary-400 disabled:opacity-60 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                >
+                  {status === 'loading' ? (
+                    <span className="flex items-center gap-1.5">
+                      <svg className="animate-spin w-3.5 h-3.5" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                      </svg>
+                      Subscribing…
+                    </span>
+                  ) : 'Subscribe'}
+                </button>
+              </form>
+
+              {/* Error message */}
+              {status === 'error' && (
+                <p className="text-red-400 text-xs mt-2.5 max-w-md mx-auto text-left">
+                  ⚠ {errorMsg}
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 

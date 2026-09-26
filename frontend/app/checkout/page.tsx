@@ -358,12 +358,10 @@ export default function CheckoutPage() {
                       {item.category && <p className="text-xs text-gray-400 mt-0.5">{item.category}</p>}
                       <div className="flex items-center justify-between mt-1.5">
                         <span className="text-sm font-extrabold text-[#0d2233]">£{item.price.toFixed(2)}</span>
-                        {step === 'review' && (
-                          <button onClick={() => removeItem(item.courseId)}
-                            className="text-xs text-gray-400 hover:text-red-400 transition-colors">
-                            Remove
-                          </button>
-                        )}
+                        <button onClick={() => removeItem(item.courseId)}
+                          className="text-xs text-gray-400 hover:text-red-400 transition-colors">
+                          Remove
+                        </button>
                       </div>
                     </div>
                   </div>

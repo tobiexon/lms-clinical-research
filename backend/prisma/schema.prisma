@@ -91,6 +91,7 @@ model User {
   refreshTokens RefreshToken[]
   payments      Payment[]
   magicTokens   MagicToken[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
 }
@@ -475,6 +476,21 @@ model MagicToken {
   createdAt DateTime @default(now())
 
   @@map("magic_tokens")
+}
+
+// ─────────────────────────────────────────
+// PASSWORD RESET TOKENS
+// ─────────────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  used      Boolean  @default(false)
+  expiresAt DateTime // 1 hour from creation
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
 }
 
 // ─────────────────────────────────────────

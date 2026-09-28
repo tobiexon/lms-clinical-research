@@ -97,6 +97,59 @@ let AuthService = class AuthService {
         await this.prisma.refreshToken.deleteMany({ where: { token } });
         return { message: 'Logged out successfully' };
     }
+    async forgotPassword(dto) {
+        const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+        if (user && user.isActive) {
+            await this.prisma.passwordResetToken.updateMany({
+                where: { userId: user.id, used: false },
+                data: { used: true },
+            });
+            const expiresAt = new Date();
+            expiresAt.setHours(expiresAt.getHours() + 1);
+            const resetRecord = await this.prisma.passwordResetToken.create({
+                data: { userId: user.id, expiresAt },
+            });
+            this.notifications.sendPasswordResetEmail({
+                email: user.email,
+                firstName: user.firstName,
+                resetToken: resetRecord.token,
+            }).catch(() => { });
+        }
+        return { message: 'If an account with that email exists, a reset link has been sent.' };
+    }
+    async resetPassword(dto) {
+        const record = await this.prisma.passwordResetToken.findUnique({
+            where: { token: dto.token },
+            include: { user: true },
+        });
+        if (!record) {
+            throw new common_1.BadRequestException('Invalid or expired reset link');
+        }
+        if (record.used) {
+            throw new common_1.BadRequestException('This reset link has already been used. Please request a new one.');
+        }
+        if (record.expiresAt < new Date()) {
+            throw new common_1.BadRequestException('This reset link has expired. Please request a new one.');
+        }
+        if (!record.user.isActive) {
+            throw new common_1.BadRequestException('Account is inactive');
+        }
+        const passwordHash = await bcrypt.hash(dto.password, 12);
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: record.userId },
+                data: { passwordHash },
+            }),
+            this.prisma.passwordResetToken.update({
+                where: { token: dto.token },
+                data: { used: true },
+            }),
+            this.prisma.refreshToken.deleteMany({
+                where: { userId: record.userId },
+            }),
+        ]);
+        return { message: 'Password updated successfully. You can now log in.' };
+    }
     async generateMagicToken(userId) {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 48);

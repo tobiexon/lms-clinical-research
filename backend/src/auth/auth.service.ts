@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
@@ -125,6 +127,83 @@ export class AuthService {
   async logout(token: string) {
     await this.prisma.refreshToken.deleteMany({ where: { token } });
     return { message: 'Logged out successfully' };
+  }
+
+  // -------------------------------------------------------
+  // Forgot password — send reset email
+  // Always returns success to prevent email enumeration
+  // -------------------------------------------------------
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+
+    if (user && user.isActive) {
+      // Invalidate any existing unused tokens for this user
+      await this.prisma.passwordResetToken.updateMany({
+        where: { userId: user.id, used: false },
+        data: { used: true },
+      });
+
+      // Create new token — expires in 1 hour
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 1);
+
+      const resetRecord = await this.prisma.passwordResetToken.create({
+        data: { userId: user.id, expiresAt },
+      });
+
+      // Send email (fire-and-forget — don't expose errors to caller)
+      this.notifications.sendPasswordResetEmail({
+        email: user.email,
+        firstName: user.firstName,
+        resetToken: resetRecord.token,
+      }).catch(() => {});
+    }
+
+    // Always return the same message — don't reveal if email exists
+    return { message: 'If an account with that email exists, a reset link has been sent.' };
+  }
+
+  // -------------------------------------------------------
+  // Reset password — validate token and set new password
+  // -------------------------------------------------------
+  async resetPassword(dto: ResetPasswordDto) {
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { token: dto.token },
+      include: { user: true },
+    });
+
+    if (!record) {
+      throw new BadRequestException('Invalid or expired reset link');
+    }
+    if (record.used) {
+      throw new BadRequestException('This reset link has already been used. Please request a new one.');
+    }
+    if (record.expiresAt < new Date()) {
+      throw new BadRequestException('This reset link has expired. Please request a new one.');
+    }
+    if (!record.user.isActive) {
+      throw new BadRequestException('Account is inactive');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    // Update password and invalidate the token atomically
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { passwordHash },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { token: dto.token },
+        data: { used: true },
+      }),
+      // Revoke all refresh tokens so existing sessions are invalidated
+      this.prisma.refreshToken.deleteMany({
+        where: { userId: record.userId },
+      }),
+    ]);
+
+    return { message: 'Password updated successfully. You can now log in.' };
   }
 
   // -------------------------------------------------------

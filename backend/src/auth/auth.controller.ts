@@ -3,6 +3,8 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -36,9 +38,28 @@ export class AuthController {
   }
 
   /**
+   * POST /api/v1/auth/forgot-password
+   * Sends a password reset email. Always returns 200 to prevent email enumeration.
+   */
+  @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  /**
+   * POST /api/v1/auth/reset-password
+   * Validates the reset token and sets a new password.
+   */
+  @HttpCode(HttpStatus.OK)
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  /**
    * GET /api/v1/auth/magic/:token
    * One-time magic link login — validates token, returns JWT, marks token as used.
-   * Used in payment confirmation emails so users click once and are logged in.
    */
   @HttpCode(HttpStatus.OK)
   @Get('magic/:token')

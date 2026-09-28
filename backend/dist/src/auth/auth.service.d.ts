@@ -4,6 +4,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 export declare class AuthService {
     private prisma;
@@ -42,6 +44,12 @@ export declare class AuthService {
         refreshToken: string;
     }>;
     logout(token: string): Promise<{
+        message: string;
+    }>;
+    forgotPassword(dto: ForgotPasswordDto): Promise<{
+        message: string;
+    }>;
+    resetPassword(dto: ResetPasswordDto): Promise<{
         message: string;
     }>;
     generateMagicToken(userId: string): Promise<string>;

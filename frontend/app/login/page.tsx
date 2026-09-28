@@ -80,9 +80,14 @@ function LoginForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                {/* <Link href="/forgot-password" className="text-xs text-primary-700 hover:underline">
+                  Forgot password?
+                </Link> */}
+              </div>
               <input
                 type="password"
                 required
@@ -102,7 +107,13 @@ function LoginForm() {
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-4">
+          <p className="text-center mt-3">
+            <Link href="/forgot-password" className="text-xs text-primary-700 hover:underline">
+              Forgot password?
+            </Link>
+          </p>
+
+          <p className="text-center text-sm text-gray-500 mt-3">
             Don&apos;t have an account?{' '}
             <Link
               href={`/register${redirectTo !== '/dashboard' ? `?redirect=${redirectTo}` : ''}`}

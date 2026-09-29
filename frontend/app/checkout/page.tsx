@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCartStore, CartItem } from '@/lib/cart-store';
 import { paymentsApi } from '@/lib/api';
 import Cookies from 'js-cookie';
@@ -13,17 +14,16 @@ import {
   useElements,
 } from '@stripe/react-stripe-js';
 
-// Load Stripe outside of component renders for performance
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
 );
 
-// ─── Inner checkout form (rendered inside <Elements>) ──────────────────────
+// ─── Inner checkout form ────────────────────────────────────────────────────
 interface CheckoutFormProps {
   form: { firstName: string; lastName: string; email: string };
   items: CartItem[];
   total: number;
-  onSuccess: () => void;
+  onSuccess: (accessToken: string, refreshToken: string) => void;
 }
 
 function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
@@ -40,10 +40,9 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
     setErrorMsg(null);
 
     try {
-      // Confirm the payment with Stripe — card details never touch our server
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        redirect: 'if_required', // only redirect for bank redirects (iDEAL etc.)
+        redirect: 'if_required',
         confirmParams: {
           payment_method_data: {
             billing_details: {
@@ -60,8 +59,8 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
       }
 
       if (paymentIntent?.status === 'succeeded') {
-        // Tell our backend to enrol the user
-        await paymentsApi.processPayment({
+        // Backend enrols user and returns JWT tokens for auto-login
+        const { data } = await paymentsApi.processPayment({
           firstName: form.firstName,
           lastName: form.lastName,
           email: form.email,
@@ -75,7 +74,12 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
           })),
         });
 
-        onSuccess();
+        // Auto-login — store tokens if returned
+        if (data.accessToken && data.refreshToken) {
+          onSuccess(data.accessToken, data.refreshToken);
+        } else {
+          onSuccess('', '');
+        }
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message || 'Something went wrong. Please try again.';
@@ -87,11 +91,9 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
 
   return (
     <form onSubmit={handlePay} className="space-y-5">
-      {/* Stripe Payment Element — adapts to card type, country, wallet etc. */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-gray-900 text-lg">Payment Details</h2>
-          {/* Card logos */}
           <div className="flex gap-1.5 items-center text-gray-400">
             <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">VISA</span>
             <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">MC</span>
@@ -100,15 +102,13 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
           </div>
         </div>
 
-        {/* Stripe-hosted card fields — PCI-compliant, works globally */}
         <PaymentElement
           options={{
             layout: 'tabs',
-            fields: { billingDetails: { email: 'never' } }, // we pass email ourselves
+            fields: { billingDetails: { email: 'never' } },
           }}
         />
 
-        {/* Security note */}
         <div className="flex items-center gap-2 mt-4 text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
           <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
@@ -143,19 +143,17 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
   );
 }
 
-// ─── Outer page — handles contact form + PaymentIntent creation ────────────
+// ─── Outer page ─────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const { items, removeItem, total, clearCart } = useCartStore();
+  const router = useRouter();
   const [step, setStep] = useState<'review' | 'payment' | 'success'>('review');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [intentError, setIntentError] = useState<string | null>(null);
   const [creatingIntent, setCreatingIntent] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-  });
+  const [form, setForm] = useState({ firstName: '', lastName: '', email: '' });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -188,12 +186,22 @@ export default function CheckoutPage() {
     }
   }
 
-  function handleSuccess() {
+  function handleSuccess(accessToken: string, refreshToken: string) {
     clearCart();
+
+    // Auto-login: store JWT tokens so user is immediately authenticated
+    if (accessToken && refreshToken) {
+      Cookies.set('access_token', accessToken, { secure: true, sameSite: 'strict' });
+      Cookies.set('refresh_token', refreshToken, { secure: true, sameSite: 'strict' });
+      sessionStorage.setItem('access_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      setIsLoggedIn(true);
+    }
+
     setStep('success');
   }
 
-  // ── Empty cart ──────────────────────────────────────────────
+  // ── Empty cart ────────────────────────────────────────────────
   if (items.length === 0 && step !== 'success') {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -209,7 +217,7 @@ export default function CheckoutPage() {
     );
   }
 
-  // ── Success ─────────────────────────────────────────────────
+  // ── Success ───────────────────────────────────────────────────
   if (step === 'success') {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -220,19 +228,30 @@ export default function CheckoutPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-extrabold text-gray-900 mb-2">Enrolment Confirmed!</h1>
-          <p className="text-gray-500 mb-6">
-            You now have access to your course. A confirmation email has been sent.
+          <p className="text-gray-500 mb-2">
+            You now have access to your course.
+          </p>
+          <p className="text-sm text-gray-400 mb-6">
+            A confirmation email has been sent to <strong>{form.email}</strong>
           </p>
           <div className="space-y-3">
-            <Link href="/dashboard"
-              className="block w-full bg-[#0d2233] hover:bg-[#1a3a5c] text-white font-bold py-3 rounded-lg transition-colors">
+            {/* Go to Dashboard — user is already logged in via auto-login above */}
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="block w-full bg-[#0d2233] hover:bg-[#1a3a5c] text-white font-bold py-3 rounded-lg transition-colors text-center"
+            >
               Go to My Dashboard
-            </Link>
+            </button>
             <Link href="/courses"
               className="block w-full border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-3 rounded-lg transition-colors">
               Browse More Courses
             </Link>
           </div>
+          {!isLoggedIn && (
+            <p className="text-xs text-gray-400 mt-4">
+              Check your email for a login link to access your course.
+            </p>
+          )}
         </div>
       </main>
     );
@@ -241,16 +260,12 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="max-w-5xl mx-auto">
-
-        {/* Header */}
         <div className="mb-8">
           <Link href="/courses" className="text-sm text-[#c9a84c] hover:underline">← Back to courses</Link>
           <h1 className="text-3xl font-extrabold text-gray-900 mt-2">Checkout</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* ── Left: forms ── */}
           <div className="lg:col-span-2 space-y-6">
 
             {/* Step 1 — Contact information */}
@@ -285,15 +300,11 @@ export default function CheckoutPage() {
                     <input required type="email" name="email" value={form.email} onChange={handleChange}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#c9a84c]"
                       placeholder="john@example.com" />
-                    <p className="text-xs text-gray-400 mt-1">Your receipt and access details will be sent here</p>
+                    <p className="text-xs text-gray-400 mt-1">Your receipt and course access details will be sent here</p>
                   </div>
-
                   {intentError && (
-                    <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-                      {intentError}
-                    </div>
+                    <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{intentError}</div>
                   )}
-
                   <button type="submit" disabled={creatingIntent}
                     className="w-full bg-[#0d2233] hover:bg-[#1a3a5c] disabled:opacity-60 text-white font-bold py-3 rounded-lg transition-colors">
                     {creatingIntent ? 'Setting up payment…' : 'Continue to Payment →'}
@@ -303,14 +314,12 @@ export default function CheckoutPage() {
                 <div className="text-sm text-gray-600 space-y-1">
                   <p><span className="font-medium">{form.firstName} {form.lastName}</span></p>
                   <p>{form.email}</p>
-                  <button onClick={() => setStep('review')} className="text-xs text-[#c9a84c] hover:underline mt-1">
-                    Edit
-                  </button>
+                  <button onClick={() => setStep('review')} className="text-xs text-[#c9a84c] hover:underline mt-1">Edit</button>
                 </div>
               )}
             </div>
 
-            {/* Step 2 — Stripe payment form */}
+            {/* Step 2 — Stripe payment */}
             {step === 'payment' && clientSecret && (
               <Elements
                 stripe={stripePromise}
@@ -318,35 +327,22 @@ export default function CheckoutPage() {
                   clientSecret,
                   appearance: {
                     theme: 'stripe',
-                    variables: {
-                      colorPrimary: '#c9a84c',
-                      colorBackground: '#ffffff',
-                      borderRadius: '8px',
-                      fontFamily: 'inherit',
-                    },
+                    variables: { colorPrimary: '#c9a84c', colorBackground: '#ffffff', borderRadius: '8px', fontFamily: 'inherit' },
                   },
                 }}
               >
-                <CheckoutForm
-                  form={form}
-                  items={items}
-                  total={total()}
-                  onSuccess={handleSuccess}
-                />
+                <CheckoutForm form={form} items={items} total={total()} onSuccess={handleSuccess} />
               </Elements>
             )}
           </div>
 
-          {/* ── Right: order summary ── */}
+          {/* Order summary */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm sticky top-6 overflow-hidden">
               <div className="bg-[#0d2233] px-5 py-4">
                 <h2 className="text-white font-bold">Order Summary</h2>
-                <p className="text-cyan-400 text-xs mt-0.5">
-                  {items.length} course{items.length !== 1 ? 's' : ''}
-                </p>
+                <p className="text-cyan-400 text-xs mt-0.5">{items.length} course{items.length !== 1 ? 's' : ''}</p>
               </div>
-
               <div className="divide-y divide-gray-100">
                 {items.map((item) => (
                   <div key={item.courseId} className="p-4 flex gap-3">
@@ -358,36 +354,20 @@ export default function CheckoutPage() {
                       {item.category && <p className="text-xs text-gray-400 mt-0.5">{item.category}</p>}
                       <div className="flex items-center justify-between mt-1.5">
                         <span className="text-sm font-extrabold text-[#0d2233]">£{item.price.toFixed(2)}</span>
-                        <button onClick={() => removeItem(item.courseId)}
-                          className="text-xs text-gray-400 hover:text-red-400 transition-colors">
-                          Remove
-                        </button>
+                        <button onClick={() => removeItem(item.courseId)} className="text-xs text-gray-400 hover:text-red-400 transition-colors">Remove</button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Totals */}
               <div className="p-5 bg-gray-50 border-t border-gray-100 space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Subtotal</span>
-                  <span>£{total().toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>VAT (0%)</span>
-                  <span>£0.00</span>
-                </div>
+                <div className="flex justify-between text-sm text-gray-600"><span>Subtotal</span><span>£{total().toFixed(2)}</span></div>
+                <div className="flex justify-between text-sm text-gray-600"><span>VAT (0%)</span><span>£0.00</span></div>
                 <div className="flex justify-between font-extrabold text-gray-900 text-base pt-2 border-t border-gray-200">
-                  <span>Total</span>
-                  <span className="text-[#0d2233]">£{total().toFixed(2)}</span>
+                  <span>Total</span><span className="text-[#0d2233]">£{total().toFixed(2)}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Charged in GBP — your bank converts to your local currency at the prevailing rate.
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Charged in GBP — your bank converts to your local currency at the prevailing rate.</p>
               </div>
-
-              {/* What's included */}
               <div className="p-4 border-t border-gray-100">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Included with every course</p>
                 {['Lifetime access', 'Certificate of completion', 'Downloadable resources', '5-day money-back guarantee'].map((benefit) => (
@@ -399,7 +379,6 @@ export default function CheckoutPage() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </main>

@@ -10,6 +10,8 @@ export declare class PaymentsController {
         currency: string;
     }>;
     processPayment(req: any, dto: CreatePaymentDto): Promise<{
+        accessToken: string;
+        refreshToken: string;
         paymentId: string;
         status: import(".prisma/client").$Enums.PaymentStatus;
         totalAmount: import("@prisma/client/runtime/library").Decimal;

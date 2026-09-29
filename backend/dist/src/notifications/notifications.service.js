@@ -31,16 +31,46 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         return this.config.get('FRONTEND_URL', 'http://localhost:3000');
     }
     async send(to, subject, html) {
-        const token = this.apiToken;
+        const resendKey = this.config.get('RESEND_API_KEY', '');
+        const mailtrapToken = this.apiToken;
         const sandboxId = this.config.get('MAILTRAP_SANDBOX_ID', '');
-        if (!token || !sandboxId) {
-            this.logger.warn(`Mailtrap not configured — skipping email to ${to}`);
+        if (resendKey) {
+            try {
+                const res = await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${resendKey}`,
+                    },
+                    body: JSON.stringify({
+                        from: `${this.fromName} <onboarding@resend.dev>`,
+                        to: [to],
+                        subject,
+                        html,
+                    }),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.logger.log(`✅ Email sent via Resend to ${to} — "${subject}" [${data?.id || 'ok'}]`);
+                }
+                else {
+                    const err = await res.text();
+                    this.logger.error(`❌ Resend ${res.status} for ${to}: ${err}`);
+                }
+            }
+            catch (err) {
+                this.logger.error(`❌ Resend failed for ${to}: ${err.message}`);
+            }
+            return;
+        }
+        if (!mailtrapToken || !sandboxId) {
+            this.logger.warn(`No email provider configured — skipping email to ${to}`);
             return;
         }
         try {
             const res = await fetch(`https://sandbox.api.mailtrap.io/api/send/${sandboxId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Api-Token': token },
+                headers: { 'Content-Type': 'application/json', 'Api-Token': mailtrapToken },
                 body: JSON.stringify({
                     from: { email: this.fromEmail, name: this.fromName },
                     to: [{ email: to }],
@@ -50,7 +80,7 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             });
             if (res.ok) {
                 const data = await res.json();
-                this.logger.log(`✅ Email sent to ${to} — "${subject}" [${data?.message_ids?.[0] || 'ok'}]`);
+                this.logger.log(`✅ Email sent via Mailtrap sandbox to ${to} — "${subject}" [${data?.message_ids?.[0] || 'ok'}]`);
             }
             else {
                 const err = await res.text();
@@ -58,7 +88,7 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             }
         }
         catch (err) {
-            this.logger.error(`❌ Email failed to ${to}: ${err.message}`);
+            this.logger.error(`❌ Mailtrap failed for ${to}: ${err.message}`);
         }
     }
     async sendWelcomeEmail(user) {

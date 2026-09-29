@@ -106,14 +106,10 @@ function LoginForm() {
               {loading ? 'Signing in...' : redirectTo === '/checkout' ? 'Sign In & Continue to Payment' : 'Sign In'}
             </button>
           </form>
-
-          <p className="text-center mt-3">
-            <Link href="/forgot-password" className="text-xs text-primary-700 hover:underline">
-              Forgot password?
-            </Link>
-          </p>
-
-          <p className="text-center text-sm text-gray-500 mt-3">
+          <Link href="/forgot-password" className="text-xs text-primary-700 hover:underline">
+                Forgot password?
+          </Link>       
+          <p className="text-center text-sm text-gray-500 mt-4">
             Don&apos;t have an account?{' '}
             <Link
               href={`/register${redirectTo !== '/dashboard' ? `?redirect=${redirectTo}` : ''}`}

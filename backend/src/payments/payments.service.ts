@@ -1,4 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -16,6 +18,8 @@ export class PaymentsService {
     private prisma: PrismaService,
     private enrollments: EnrollmentsService,
     private notifications: NotificationsService,
+    private jwtService: JwtService,
+    private config: ConfigService,
   ) {
     const key = process.env.STRIPE_SECRET_KEY;
     if (key) {
@@ -292,6 +296,10 @@ export class PaymentsService {
       coursesEnrolled: enrollmentResults.filter((r) => !r.error).length,
       items: paidPayment.items,
       user: paidPayment.user,
+      // ── Auto-login tokens ─────────────────────────────────
+      // Return JWT pair so the frontend can log the user in immediately
+      // without requiring them to sign in separately after payment
+      ...(await this.generateTokens(resolvedUserId, paidPayment.user!.email as string, 'LEARNER')),
     };
   }
 
@@ -363,6 +371,29 @@ export class PaymentsService {
       pendingCount,
       refundedCount,
     };
+  }
+
+  /**
+   * Generate JWT access + refresh token pair for auto-login after payment.
+   */
+  private async generateTokens(userId: string, email: string, role: string) {
+    const payload = { sub: userId, email, role };
+
+    const accessToken = this.jwtService.sign(payload);
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      expiresIn: this.config.get<string>('JWT_REFRESH_EXPIRY', '7d'),
+    });
+
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await this.prisma.refreshToken.create({
+      data: { token: refreshToken, userId, expiresAt },
+    });
+
+    return { accessToken, refreshToken };
   }
 
   /**

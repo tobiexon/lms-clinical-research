@@ -1,3 +1,5 @@
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { EnrollmentsService } from '../enrollments/enrollments.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -7,9 +9,11 @@ export declare class PaymentsService {
     private prisma;
     private enrollments;
     private notifications;
+    private jwtService;
+    private config;
     private readonly logger;
     private readonly stripe;
-    constructor(prisma: PrismaService, enrollments: EnrollmentsService, notifications: NotificationsService);
+    constructor(prisma: PrismaService, enrollments: EnrollmentsService, notifications: NotificationsService, jwtService: JwtService, config: ConfigService);
     createPaymentIntent(dto: CreatePaymentIntentDto): Promise<{
         clientSecret: string;
         paymentIntentId: string;
@@ -17,6 +21,8 @@ export declare class PaymentsService {
         currency: string;
     }>;
     processPayment(userId: string | null, dto: CreatePaymentDto): Promise<{
+        accessToken: string;
+        refreshToken: string;
         paymentId: string;
         status: import(".prisma/client").$Enums.PaymentStatus;
         totalAmount: Decimal;
@@ -177,6 +183,7 @@ export declare class PaymentsService {
         pendingCount: number;
         refundedCount: number;
     }>;
+    private generateTokens;
     private generateMagicToken;
     private generatePassword;
 }

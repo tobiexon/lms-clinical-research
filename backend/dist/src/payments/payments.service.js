@@ -12,6 +12,8 @@ var PaymentsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentsService = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
+const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
 const enrollments_service_1 = require("../enrollments/enrollments.service");
 const notifications_service_1 = require("../notifications/notifications.service");
@@ -19,10 +21,12 @@ const library_1 = require("@prisma/client/runtime/library");
 const bcrypt = require("bcrypt");
 const Stripe = require("stripe");
 let PaymentsService = PaymentsService_1 = class PaymentsService {
-    constructor(prisma, enrollments, notifications) {
+    constructor(prisma, enrollments, notifications, jwtService, config) {
         this.prisma = prisma;
         this.enrollments = enrollments;
         this.notifications = notifications;
+        this.jwtService = jwtService;
+        this.config = config;
         this.logger = new common_1.Logger(PaymentsService_1.name);
         const key = process.env.STRIPE_SECRET_KEY;
         if (key) {
@@ -235,6 +239,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             coursesEnrolled: enrollmentResults.filter((r) => !r.error).length,
             items: paidPayment.items,
             user: paidPayment.user,
+            ...(await this.generateTokens(resolvedUserId, paidPayment.user.email, 'LEARNER')),
         };
     }
     async getUserPayments(userId) {
@@ -289,6 +294,20 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             refundedCount,
         };
     }
+    async generateTokens(userId, email, role) {
+        const payload = { sub: userId, email, role };
+        const accessToken = this.jwtService.sign(payload);
+        const refreshToken = this.jwtService.sign(payload, {
+            secret: this.config.get('JWT_REFRESH_SECRET'),
+            expiresIn: this.config.get('JWT_REFRESH_EXPIRY', '7d'),
+        });
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+        await this.prisma.refreshToken.create({
+            data: { token: refreshToken, userId, expiresAt },
+        });
+        return { accessToken, refreshToken };
+    }
     async generateMagicToken(userId) {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 48);
@@ -307,6 +326,8 @@ exports.PaymentsService = PaymentsService = PaymentsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         enrollments_service_1.EnrollmentsService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        jwt_1.JwtService,
+        config_1.ConfigService])
 ], PaymentsService);
 //# sourceMappingURL=payments.service.js.map

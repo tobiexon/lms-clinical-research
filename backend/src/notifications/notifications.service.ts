@@ -24,18 +24,50 @@ export class NotificationsService {
   }
 
   private async send(to: string, subject: string, html: string): Promise<void> {
-    const token = this.apiToken;
+    const resendKey = this.config.get<string>('RESEND_API_KEY', '');
+    const mailtrapToken = this.apiToken;
     const sandboxId = this.config.get<string>('MAILTRAP_SANDBOX_ID', '');
 
-    if (!token || !sandboxId) {
-      this.logger.warn(`Mailtrap not configured — skipping email to ${to}`);
+    // ── Production: use Resend (delivers to real inboxes) ────
+    if (resendKey) {
+      try {
+        const res = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${resendKey}`,
+          },
+          body: JSON.stringify({
+            from: `${this.fromName} <onboarding@resend.dev>`,
+            to: [to],
+            subject,
+            html,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json() as any;
+          this.logger.log(`✅ Email sent via Resend to ${to} — "${subject}" [${data?.id || 'ok'}]`);
+        } else {
+          const err = await res.text();
+          this.logger.error(`❌ Resend ${res.status} for ${to}: ${err}`);
+        }
+      } catch (err: any) {
+        this.logger.error(`❌ Resend failed for ${to}: ${err.message}`);
+      }
+      return;
+    }
+
+    // ── Local dev: use Mailtrap sandbox ──────────────────────
+    if (!mailtrapToken || !sandboxId) {
+      this.logger.warn(`No email provider configured — skipping email to ${to}`);
       return;
     }
 
     try {
       const res = await fetch(`https://sandbox.api.mailtrap.io/api/send/${sandboxId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Api-Token': token },
+        headers: { 'Content-Type': 'application/json', 'Api-Token': mailtrapToken },
         body: JSON.stringify({
           from: { email: this.fromEmail, name: this.fromName },
           to: [{ email: to }],
@@ -46,13 +78,13 @@ export class NotificationsService {
 
       if (res.ok) {
         const data = await res.json() as any;
-        this.logger.log(`✅ Email sent to ${to} — "${subject}" [${data?.message_ids?.[0] || 'ok'}]`);
+        this.logger.log(`✅ Email sent via Mailtrap sandbox to ${to} — "${subject}" [${data?.message_ids?.[0] || 'ok'}]`);
       } else {
         const err = await res.text();
         this.logger.error(`❌ Mailtrap ${res.status} for ${to}: ${err}`);
       }
     } catch (err: any) {
-      this.logger.error(`❌ Email failed to ${to}: ${err.message}`);
+      this.logger.error(`❌ Mailtrap failed for ${to}: ${err.message}`);
     }
   }
 

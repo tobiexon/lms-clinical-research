@@ -19,6 +19,7 @@ exports.PaymentsModule = PaymentsModule;
 exports.PaymentsModule = PaymentsModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            config_1.ConfigModule,
             enrollments_module_1.EnrollmentsModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],

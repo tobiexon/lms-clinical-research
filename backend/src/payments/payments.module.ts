@@ -9,6 +9,7 @@ import { EnrollmentsModule } from '../enrollments/enrollments.module';
 
 @Module({
   imports: [
+    ConfigModule,
     EnrollmentsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

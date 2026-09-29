@@ -7,6 +7,7 @@ export declare class NotificationsService {
     private get fromEmail();
     private get fromName();
     private get frontendUrl();
+    private get adminEmail();
     private send;
     sendWelcomeEmail(user: {
         email: string;
@@ -58,6 +59,7 @@ export declare class NotificationsService {
         firstName: string;
         resetToken: string;
     }): Promise<void>;
+    sendAdminAlertEmail(subject: string, details: string): Promise<void>;
     private baseTemplate;
     private cta;
 }

@@ -14,10 +14,10 @@ async function main() {
   // ── Admin user ─────────────────────────────────────────────
   const adminHash = await bcrypt.hash('Admin@Exon2024', 12);
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@exonsciences.com' },
+    where: { email: 'admin@exonsciences.co.uk' },
     update: {},
     create: {
-      email: 'admin@exonsciences.com',
+      email: 'admin@exonsciences.co.uk',
       passwordHash: adminHash,
       firstName: 'Exon',
       lastName: 'Admin',
@@ -307,7 +307,7 @@ async function main() {
   console.log('\n🎉 Seed complete!\n');
   console.log('─────────────────────────────────────────');
   console.log('Login credentials:');
-  console.log('  Admin:          admin@exonsciences.com  / Admin@Exon2024');
+  console.log('  Admin:          admin@exonsciences.co.uk  / Admin@Exon2024');
   console.log('  Content Editor: content@exonsciences.com / Editor@Exon2024');
   console.log('  Test Learner:   learner@test.com         / Learner@Exon2024');
   console.log('─────────────────────────────────────────\n');

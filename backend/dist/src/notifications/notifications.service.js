@@ -30,6 +30,9 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
     get frontendUrl() {
         return this.config.get('FRONTEND_URL', 'http://localhost:3000');
     }
+    get adminEmail() {
+        return this.config.get('ADMIN_EMAIL', 'admin@exonsciences.co.uk');
+    }
     async send(to, subject, html) {
         const resendKey = this.config.get('RESEND_API_KEY', '');
         const mailtrapToken = this.apiToken;
@@ -219,6 +222,17 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
       <p style="color:#888;font-size:13px;margin:20px 0 0">If you didn't request this, ignore this email.</p>
     `);
         return this.send(data.email, 'Reset your Clinical Research Nexus password', html);
+    }
+    async sendAdminAlertEmail(subject, details) {
+        const html = this.baseTemplate(`
+      <h1 style="color:#c0392b;margin:0 0 8px">⚠ Admin Alert</h1>
+      <p style="color:#555;font-size:15px;margin:0 0 16px">${subject}</p>
+      <div style="background:#fef9f9;border:1px solid #f5c6cb;padding:16px 20px;border-radius:8px;margin:0 0 20px">
+        <pre style="margin:0;font-family:monospace;font-size:13px;color:#333;white-space:pre-wrap">${details}</pre>
+      </div>
+      <p style="color:#888;font-size:12px;margin:0">Sent automatically by the Clinical Research Nexus LMS.</p>
+    `);
+        return this.send(this.adminEmail, `[CRN Admin] ${subject}`, html);
     }
     baseTemplate(content) {
         return `<!DOCTYPE html>

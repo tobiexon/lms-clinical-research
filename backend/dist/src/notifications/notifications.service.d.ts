@@ -60,6 +60,18 @@ export declare class NotificationsService {
         resetToken: string;
     }): Promise<void>;
     sendAdminAlertEmail(subject: string, details: string): Promise<void>;
+    sendAdminPaymentNotification(data: {
+        payerName: string;
+        payerEmail: string;
+        paymentId: string;
+        totalAmount: number;
+        currency: string;
+        paidAt: Date;
+        items: {
+            courseTitle: string;
+            unitPrice: number;
+        }[];
+    }): Promise<void>;
     private baseTemplate;
     private cta;
 }

@@ -230,6 +230,20 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
                     })),
                 }).catch(() => { });
             }
+            this.notifications.sendAdminPaymentNotification({
+                payerName: `${user.firstName} ${user.lastName}`,
+                payerEmail: user.email,
+                paymentId: paidPayment.id,
+                totalAmount: parseFloat(paidPayment.totalAmount.toString()),
+                currency: paidPayment.currency,
+                paidAt: paidPayment.paidAt,
+                items: paidPayment.items.map((item) => ({
+                    courseTitle: item.courseTitle,
+                    unitPrice: parseFloat(item.unitPrice.toString()),
+                })),
+            }).catch((err) => {
+                this.logger.error(`Failed to send admin payment notification: ${err?.message}`);
+            });
         }
         return {
             paymentId: paidPayment.id,

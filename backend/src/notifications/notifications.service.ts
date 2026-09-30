@@ -284,6 +284,51 @@ export class NotificationsService {
     return this.send(this.adminEmail, `[CRN Admin] ${subject}`, html);
   }
 
+  // ── Admin payment notification ───────────────────────────────
+  async sendAdminPaymentNotification(data: {
+    payerName: string;
+    payerEmail: string;
+    paymentId: string;
+    totalAmount: number;
+    currency: string;
+    paidAt: Date;
+    items: { courseTitle: string; unitPrice: number }[];
+  }) {
+    const rows = data.items.map(i =>
+      `<tr>
+        <td style="padding:10px 0;border-bottom:1px solid #eee">${i.courseTitle}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:right">${data.currency} ${i.unitPrice.toFixed(2)}</td>
+      </tr>`
+    ).join('');
+
+    const html = this.baseTemplate(`
+      <h1 style="color:#0d2233;margin:0 0 4px">💰 New Payment Received</h1>
+      <p style="color:#888;font-size:13px;margin:0 0 24px">
+        Receipt #${data.paymentId.slice(-8).toUpperCase()} · ${new Date(data.paidAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+      </p>
+      <div style="background:#f0f9ff;border:1px solid #c9a84c;padding:16px 20px;border-radius:8px;margin:0 0 20px">
+        <p style="margin:0 0 6px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Payer Details</p>
+        <p style="margin:0 0 4px;font-size:15px;color:#0d2233;font-weight:bold">${data.payerName}</p>
+        <p style="margin:0;font-size:14px;color:#555">${data.payerEmail}</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
+        <thead><tr>
+          <th style="text-align:left;padding:8px 0;border-bottom:2px solid #0d2233;color:#0d2233;font-size:13px">Course</th>
+          <th style="text-align:right;padding:8px 0;border-bottom:2px solid #0d2233;color:#0d2233;font-size:13px">Amount</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td style="padding:12px 0 0;font-weight:bold;color:#0d2233;font-size:16px">Total Received</td>
+          <td style="padding:12px 0 0;font-weight:bold;color:#2d9e5f;font-size:18px;text-align:right">${data.currency} ${data.totalAmount.toFixed(2)}</td>
+        </tr></tfoot>
+      </table>
+      <p style="color:#888;font-size:13px;margin:0">
+        View full payment details in the <a href="${this.frontendUrl}/admin" style="color:#c9a84c">admin dashboard</a>.
+      </p>
+    `);
+    return this.send(this.adminEmail, `[CRN] New Payment: ${data.currency} ${data.totalAmount.toFixed(2)} from ${data.payerName}`, html);
+  }
+
   // ── Base HTML template ───────────────────────────────────────
   private baseTemplate(content: string): string {
     return `<!DOCTYPE html>

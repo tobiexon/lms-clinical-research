@@ -42,7 +42,7 @@ export class NotificationsService {
             'Authorization': `Bearer ${resendKey}`,
           },
           body: JSON.stringify({
-            from: `${this.fromName} <onboarding@resend.dev>`,
+            from: `${this.fromName} <${this.fromEmail}>`,
             to: [to],
             subject,
             html,

@@ -18,6 +18,7 @@ export default function NewCoursePage() {
     learningObjectives: '', prerequisites: '', tags: '',
     isFeatured: false, isPublished: false,
     seoTitle: '', seoDescription: '',
+    price: '', originalPrice: '',
   });
 
   useEffect(() => {
@@ -50,6 +51,8 @@ export default function NewCoursePage() {
       const payload = {
         ...form,
         durationHours: parseFloat(form.durationHours) || 0,
+        price: form.price ? parseFloat(form.price) : 100,
+        originalPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,
         learningObjectives: form.learningObjectives.split('\n').map((s) => s.trim()).filter(Boolean),
         prerequisites: form.prerequisites.split('\n').map((s) => s.trim()).filter(Boolean),
         tags: form.tags.split(',').map((s) => s.trim()).filter(Boolean),
@@ -143,6 +146,30 @@ export default function NewCoursePage() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
               placeholder="e.g. ACRP Approved | ICH GCP E6(R3) Aligned" />
           </div>
+        </div>
+
+        {/* Pricing */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <h2 className="font-semibold text-gray-900">Pricing (GBP)</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Price (£)</label>
+              <input type="number" min="0" step="0.01" value={form.price}
+                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="100.00" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Original Price (£) <span className="text-gray-400 font-normal">optional</span>
+              </label>
+              <input type="number" min="0" step="0.01" value={form.originalPrice}
+                onChange={(e) => setForm((f) => ({ ...f, originalPrice: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="150.00" />
+            </div>
+          </div>
+          <p className="text-xs text-gray-400">Set an Original Price to show a crossed-out sale price on the course page.</p>
         </div>
 
         {/* Instructors */}

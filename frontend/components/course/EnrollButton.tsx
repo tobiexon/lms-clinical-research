@@ -19,7 +19,7 @@ export default function EnrollButton({
   courseId,
   slug,
   title,
-  price = 100.00,
+  price = 0,
   originalPrice,
   thumbnailUrl,
   category,

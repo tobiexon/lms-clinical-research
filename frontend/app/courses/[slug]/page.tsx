@@ -126,7 +126,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                   courseId={course.id}
                   slug={course.slug}
                   title={course.title}
-                  price={parseFloat(course.price) || 100}
+                  price={parseFloat(course.price)}
                   originalPrice={course.originalPrice ? parseFloat(course.originalPrice) : undefined}
                   category={course.category?.name}
                 />
@@ -403,7 +403,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                 <div className="px-5 pt-5 pb-3 border-b border-gray-100">
                   <div className="flex items-baseline gap-3">
                     <span className="text-3xl font-extrabold text-[#0d2233]">
-                      £{(parseFloat(course.price) || 100).toFixed(2)}
+                      £{parseFloat(course.price).toFixed(2)}
                     </span>
                     {course.originalPrice && (
                       <span className="text-lg text-gray-400 line-through">
@@ -413,7 +413,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                   </div>
                   {course.originalPrice && (
                     <p className="text-xs text-green-600 font-medium mt-0.5">
-                      Save £{(parseFloat(course.originalPrice) - (parseFloat(course.price) || 100)).toFixed(2)} today
+                      Save £{(parseFloat(course.originalPrice) - parseFloat(course.price)).toFixed(2)} today
                     </p>
                   )}
                   <p className="text-xs text-gray-400 mt-1">One payment · Lifetime access</p>
@@ -440,7 +440,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                     courseId={course.id}
                     slug={course.slug}
                     title={course.title}
-                    price={parseFloat(course.price) || 100}
+                    price={parseFloat(course.price)}
                     originalPrice={course.originalPrice ? parseFloat(course.originalPrice) : undefined}
                     category={course.category?.name}
                   />

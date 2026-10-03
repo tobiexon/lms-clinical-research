@@ -49,9 +49,10 @@ export class PaymentsService {
     );
 
     const intent = await this.stripe.paymentIntents.create({
-      amount: totalPence,           // GBP pence
+      amount: totalPence,
       currency: 'gbp',
-      automatic_payment_methods: { enabled: true }, // supports cards, wallets worldwide
+      // Explicitly use card only — avoids Stripe Link authentication modal
+      payment_method_types: ['card'],
       receipt_email: dto.email,
       metadata: {
         courseIds: dto.items.map((i) => i.courseId).join(','),

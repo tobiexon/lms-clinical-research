@@ -37,6 +37,7 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         const resendKey = this.config.get('RESEND_API_KEY', '');
         const mailtrapToken = this.apiToken;
         const sandboxId = this.config.get('MAILTRAP_SANDBOX_ID', '');
+        const mailtrapSendingToken = this.config.get('MAILTRAP_SENDING_TOKEN', '');
         if (resendKey) {
             try {
                 const res = await fetch('https://api.resend.com/emails', {
@@ -54,45 +55,75 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    this.logger.log(`✅ Email sent via Resend to ${to} — "${subject}" [${data?.id || 'ok'}]`);
+                    this.logger.log(`✅ [Resend] Sent to ${to} — "${subject}" [id:${data?.id || 'ok'}]`);
                 }
                 else {
                     const err = await res.text();
-                    this.logger.error(`❌ Resend ${res.status} for ${to}: ${err}`);
+                    this.logger.error(`❌ [Resend] ${res.status} sending to ${to}: ${err}`);
                 }
             }
             catch (err) {
-                this.logger.error(`❌ Resend failed for ${to}: ${err.message}`);
+                this.logger.error(`❌ [Resend] Exception sending to ${to}: ${err.message}`);
             }
             return;
         }
-        if (!mailtrapToken || !sandboxId) {
-            this.logger.warn(`No email provider configured — skipping email to ${to}`);
+        if (mailtrapSendingToken) {
+            try {
+                const res = await fetch('https://send.api.mailtrap.io/api/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${mailtrapSendingToken}`,
+                    },
+                    body: JSON.stringify({
+                        from: { email: this.fromEmail, name: this.fromName },
+                        to: [{ email: to }],
+                        subject,
+                        html,
+                    }),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.logger.log(`✅ [Mailtrap-Send] Sent to ${to} — "${subject}" [id:${data?.message_ids?.[0] || 'ok'}]`);
+                }
+                else {
+                    const err = await res.text();
+                    this.logger.error(`❌ [Mailtrap-Send] ${res.status} sending to ${to}: ${err}`);
+                }
+            }
+            catch (err) {
+                this.logger.error(`❌ [Mailtrap-Send] Exception sending to ${to}: ${err.message}`);
+            }
             return;
         }
-        try {
-            const res = await fetch(`https://sandbox.api.mailtrap.io/api/send/${sandboxId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Api-Token': mailtrapToken },
-                body: JSON.stringify({
-                    from: { email: this.fromEmail, name: this.fromName },
-                    to: [{ email: to }],
-                    subject,
-                    html,
-                }),
-            });
-            if (res.ok) {
-                const data = await res.json();
-                this.logger.log(`✅ Email sent via Mailtrap sandbox to ${to} — "${subject}" [${data?.message_ids?.[0] || 'ok'}]`);
+        if (mailtrapToken && sandboxId) {
+            try {
+                const res = await fetch(`https://sandbox.api.mailtrap.io/api/send/${sandboxId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Api-Token': mailtrapToken },
+                    body: JSON.stringify({
+                        from: { email: this.fromEmail, name: this.fromName },
+                        to: [{ email: to }],
+                        subject,
+                        html,
+                    }),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.logger.log(`✅ [Mailtrap-Sandbox] Sent to ${to} — "${subject}" [id:${data?.message_ids?.[0] || 'ok'}] ⚠ TEST MODE — email NOT delivered to real inbox`);
+                }
+                else {
+                    const err = await res.text();
+                    this.logger.error(`❌ [Mailtrap-Sandbox] ${res.status} sending to ${to}: ${err}`);
+                }
             }
-            else {
-                const err = await res.text();
-                this.logger.error(`❌ Mailtrap ${res.status} for ${to}: ${err}`);
+            catch (err) {
+                this.logger.error(`❌ [Mailtrap-Sandbox] Exception sending to ${to}: ${err.message}`);
             }
+            return;
         }
-        catch (err) {
-            this.logger.error(`❌ Mailtrap failed for ${to}: ${err.message}`);
-        }
+        this.logger.warn(`⚠ No email provider configured — email NOT sent to ${to} ("${subject}")`);
+        this.logger.warn('  Set RESEND_API_KEY in .env to enable real email delivery.');
     }
     async sendWelcomeEmail(user) {
         const html = this.baseTemplate(`

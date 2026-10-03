@@ -104,8 +104,24 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
 
         <PaymentElement
           options={{
-            layout: 'tabs',
-            fields: { billingDetails: { email: 'never' } },
+            layout: {
+              type: 'accordion',
+              defaultCollapsed: false,
+              spacedAccordionItems: false,
+            },
+            fields: {
+              billingDetails: {
+                email: 'never',
+                name: 'never',
+              },
+            },
+            wallets: {
+              applePay: 'never',
+              googlePay: 'never',
+            },
+            terms: {
+              card: 'never',
+            },
           }}
         />
 
@@ -327,8 +343,14 @@ export default function CheckoutPage() {
                   clientSecret,
                   appearance: {
                     theme: 'stripe',
-                    variables: { colorPrimary: '#c9a84c', colorBackground: '#ffffff', borderRadius: '8px', fontFamily: 'inherit' },
+                    variables: {
+                      colorPrimary: '#c9a84c',
+                      colorBackground: '#ffffff',
+                      borderRadius: '8px',
+                      fontFamily: 'inherit',
+                    },
                   },
+                  loader: 'always',
                 }}
               >
                 <CheckoutForm form={form} items={items} total={total()} onSuccess={handleSuccess} />

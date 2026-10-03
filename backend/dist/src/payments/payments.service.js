@@ -48,7 +48,7 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         const intent = await this.stripe.paymentIntents.create({
             amount: totalPence,
             currency: 'gbp',
-            automatic_payment_methods: { enabled: true },
+            payment_method_types: ['card'],
             receipt_email: dto.email,
             metadata: {
                 courseIds: dto.items.map((i) => i.courseId).join(','),

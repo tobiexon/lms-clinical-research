@@ -31,8 +31,9 @@ export class NotificationsService {
     const resendKey = this.config.get<string>('RESEND_API_KEY', '');
     const mailtrapToken = this.apiToken;
     const sandboxId = this.config.get<string>('MAILTRAP_SANDBOX_ID', '');
+    const mailtrapSendingToken = this.config.get<string>('MAILTRAP_SENDING_TOKEN', '');
 
-    // ── Production: use Resend (delivers to real inboxes) ────
+    // ── Option 1: Resend (recommended — delivers to real inboxes, free tier 3k/mo) ──
     if (resendKey) {
       try {
         const res = await fetch('https://api.resend.com/emails', {
@@ -51,45 +52,78 @@ export class NotificationsService {
 
         if (res.ok) {
           const data = await res.json() as any;
-          this.logger.log(`✅ Email sent via Resend to ${to} — "${subject}" [${data?.id || 'ok'}]`);
+          this.logger.log(`✅ [Resend] Sent to ${to} — "${subject}" [id:${data?.id || 'ok'}]`);
         } else {
           const err = await res.text();
-          this.logger.error(`❌ Resend ${res.status} for ${to}: ${err}`);
+          this.logger.error(`❌ [Resend] ${res.status} sending to ${to}: ${err}`);
         }
       } catch (err: any) {
-        this.logger.error(`❌ Resend failed for ${to}: ${err.message}`);
+        this.logger.error(`❌ [Resend] Exception sending to ${to}: ${err.message}`);
       }
       return;
     }
 
-    // ── Local dev: use Mailtrap sandbox ──────────────────────
-    if (!mailtrapToken || !sandboxId) {
-      this.logger.warn(`No email provider configured — skipping email to ${to}`);
+    // ── Option 2: Mailtrap Email Sending API (production — requires verified domain) ──
+    // Set MAILTRAP_SENDING_TOKEN in .env to use this (different from sandbox token)
+    if (mailtrapSendingToken) {
+      try {
+        const res = await fetch('https://send.api.mailtrap.io/api/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${mailtrapSendingToken}`,
+          },
+          body: JSON.stringify({
+            from: { email: this.fromEmail, name: this.fromName },
+            to: [{ email: to }],
+            subject,
+            html,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json() as any;
+          this.logger.log(`✅ [Mailtrap-Send] Sent to ${to} — "${subject}" [id:${data?.message_ids?.[0] || 'ok'}]`);
+        } else {
+          const err = await res.text();
+          this.logger.error(`❌ [Mailtrap-Send] ${res.status} sending to ${to}: ${err}`);
+        }
+      } catch (err: any) {
+        this.logger.error(`❌ [Mailtrap-Send] Exception sending to ${to}: ${err.message}`);
+      }
       return;
     }
 
-    try {
-      const res = await fetch(`https://sandbox.api.mailtrap.io/api/send/${sandboxId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Api-Token': mailtrapToken },
-        body: JSON.stringify({
-          from: { email: this.fromEmail, name: this.fromName },
-          to: [{ email: to }],
-          subject,
-          html,
-        }),
-      });
+    // ── Option 3: Mailtrap Sandbox (test only — emails go to mailtrap.io inbox, NOT real addresses) ──
+    if (mailtrapToken && sandboxId) {
+      try {
+        const res = await fetch(`https://sandbox.api.mailtrap.io/api/send/${sandboxId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Api-Token': mailtrapToken },
+          body: JSON.stringify({
+            from: { email: this.fromEmail, name: this.fromName },
+            to: [{ email: to }],
+            subject,
+            html,
+          }),
+        });
 
-      if (res.ok) {
-        const data = await res.json() as any;
-        this.logger.log(`✅ Email sent via Mailtrap sandbox to ${to} — "${subject}" [${data?.message_ids?.[0] || 'ok'}]`);
-      } else {
-        const err = await res.text();
-        this.logger.error(`❌ Mailtrap ${res.status} for ${to}: ${err}`);
+        if (res.ok) {
+          const data = await res.json() as any;
+          this.logger.log(`✅ [Mailtrap-Sandbox] Sent to ${to} — "${subject}" [id:${data?.message_ids?.[0] || 'ok'}] ⚠ TEST MODE — email NOT delivered to real inbox`);
+        } else {
+          const err = await res.text();
+          this.logger.error(`❌ [Mailtrap-Sandbox] ${res.status} sending to ${to}: ${err}`);
+        }
+      } catch (err: any) {
+        this.logger.error(`❌ [Mailtrap-Sandbox] Exception sending to ${to}: ${err.message}`);
       }
-    } catch (err: any) {
-      this.logger.error(`❌ Mailtrap failed for ${to}: ${err.message}`);
+      return;
     }
+
+    // ── No provider configured ────────────────────────────────
+    this.logger.warn(`⚠ No email provider configured — email NOT sent to ${to} ("${subject}")`);
+    this.logger.warn('  Set RESEND_API_KEY in .env to enable real email delivery.');
   }
 
   // ── Welcome email on registration ──────────────────────────

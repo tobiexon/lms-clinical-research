@@ -48,7 +48,7 @@ export default function MagicLoginPage() {
         const data = await res.json();
 
         if (!res.ok) {
-          setErrorMsg(data?.message || 'This link is invalid or has already been used.');
+          setErrorMsg(data?.message || `Login failed (${res.status}). Please log in with your email and password.`);
           setStatus('error');
           return;
         }
@@ -62,8 +62,8 @@ export default function MagicLoginPage() {
 
         // Go straight to dashboard — no login page
         router.replace('/dashboard');
-      } catch {
-        setErrorMsg('Connection failed. Please try logging in with your email and password.');
+      } catch (err: any) {
+        setErrorMsg(`Connection failed: ${err?.message || 'unknown error'}. Please log in with your email and password.`);
         setStatus('error');
       }
     }

@@ -12,27 +12,27 @@ async function getPrograms() {
 
 export const metadata = { title: 'Learning Programmes — Clinical Research Nexus' };
 
-const PROGRAMME_VISUALS: Record<string, { gradient: string; icon: string; tag: string; highlight: string }> = {
+const PROGRAMME_VISUALS: Record<string, { from: string; to: string; icon: string; tag: string; highlight: string }> = {
   'cra-foundation-certificate': {
-    gradient: 'from-[#0d2233] to-[#1a4a6e]',
+    from: '#0d2233', to: '#1a4a6e',
     icon: '🔬',
     tag: 'Clinical Research Practice',
     highlight: 'Master the fundamentals of clinical research site management, GCP compliance, and the CRA role in UK trials.',
   },
   'pharmacovigilance-certificate': {
-    gradient: 'from-[#1a2a1a] to-[#2d6e3e]',
+    from: '#1a2a1a', to: '#2d6e3e',
     icon: '💊',
     tag: 'Drug Safety & Monitoring',
     highlight: 'Build expertise in adverse event reporting, MHRA Yellow Card, signal detection, and EU pharmacovigilance obligations.',
   },
   'clinical-trial-management-certificate': {
-    gradient: 'from-[#1a1a2e] to-[#2d3e6e]',
+    from: '#1a1a2e', to: '#2d3e6e',
     icon: '📋',
     tag: 'Trial Operations & Compliance',
     highlight: 'Lead clinical trials from start-up to closure with confidence — covering GCP, MHRA regulations, and site oversight.',
   },
   'default': {
-    gradient: 'from-[#055d69] to-[#0d2233]',
+    from: '#055d69', to: '#0d2233',
     icon: '🎓',
     tag: 'Structured Learning Pathway',
     highlight: 'A structured pathway leading to a recognised qualification in clinical research.',
@@ -74,7 +74,10 @@ export default async function ProgramsPage() {
                     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden h-full flex flex-col hover:border-[#c9a84c] hover:shadow-lg transition-all group">
 
                       {/* Banner */}
-                      <div className={`relative w-full h-48 bg-gradient-to-br ${visual.gradient} flex flex-col items-center justify-center overflow-hidden`}>
+                      <div
+                        className="relative w-full h-48 flex flex-col items-center justify-center overflow-hidden"
+                        style={{ background: `linear-gradient(to bottom right, ${visual.from}, ${visual.to})` }}
+                      >
                         {/* Decorative circles */}
                         <div className="absolute inset-0 opacity-10">
                           <svg width="100%" height="100%" viewBox="0 0 200 100">

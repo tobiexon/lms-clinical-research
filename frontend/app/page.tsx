@@ -31,24 +31,25 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 };
 
 // ── Programme banner visuals — matched by slug ───────────────
-const PROGRAMME_VISUALS: Record<string, { gradient: string; icon: string; tag: string }> = {
+// NOTE: gradients use inline style (not Tailwind classes) to avoid CSS purging in production
+const PROGRAMME_VISUALS: Record<string, { from: string; to: string; icon: string; tag: string }> = {
   'cra-foundation-certificate': {
-    gradient: 'from-[#0d2233] to-[#1a4a6e]',
+    from: '#0d2233', to: '#1a4a6e',
     icon: '🔬',
     tag: 'Clinical Research Practice',
   },
   'pharmacovigilance-certificate': {
-    gradient: 'from-[#1a2a1a] to-[#2d6e3e]',
+    from: '#1a2a1a', to: '#2d6e3e',
     icon: '💊',
     tag: 'Drug Safety & Monitoring',
   },
   'clinical-trial-management-certificate': {
-    gradient: 'from-[#1a1a2e] to-[#2d3e6e]',
+    from: '#1a1a2e', to: '#2d3e6e',
     icon: '📋',
     tag: 'Trial Operations & Compliance',
   },
   'default': {
-    gradient: 'from-[#055d69] to-[#0d2233]',
+    from: '#055d69', to: '#0d2233',
     icon: '🎓',
     tag: 'Structured Learning Pathway',
   },
@@ -347,7 +348,10 @@ export default async function HomePage() {
                     <div className="border border-gray-200 rounded-xl overflow-hidden h-full flex flex-col hover:border-[#c9a84c] hover:shadow-lg transition-all bg-white group">
 
                       {/* Illustrated banner */}
-                      <div className={`relative w-full h-44 bg-gradient-to-br ${visual.gradient} overflow-hidden flex items-center justify-center`}>
+                      <div
+                        className="relative w-full h-44 overflow-hidden flex items-center justify-center"
+                        style={{ background: `linear-gradient(to bottom right, ${visual.from}, ${visual.to})` }}
+                      >
                         {/* Decorative background pattern */}
                         <div className="absolute inset-0 opacity-10">
                           <svg width="100%" height="100%" viewBox="0 0 200 100">

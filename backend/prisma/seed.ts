@@ -304,6 +304,68 @@ async function main() {
     console.log('ℹ️  Sample program already exists, skipping');
   }
 
+  // ── Pharmacovigilance Certificate Programme ─────────────────
+  const pvProgram = await prisma.program.findUnique({
+    where: { slug: 'pharmacovigilance-certificate' },
+  });
+  if (!pvProgram) {
+    const pvCourse = await prisma.course.findUnique({ where: { slug: 'introduction-to-pharmacovigilance' } });
+    const aeCourse = await prisma.course.findUnique({ where: { slug: 'adverse-event-reporting-mhra-ema' } });
+    await prisma.program.create({
+      data: {
+        title: 'Pharmacovigilance & Drug Safety Certificate',
+        slug: 'pharmacovigilance-certificate',
+        description: 'A structured pathway covering the principles of pharmacovigilance, adverse event reporting, signal detection, and the UK/EU regulatory framework for drug safety monitoring. Ideal for professionals working in or transitioning to drug safety roles.',
+        awardTitle: 'Certificate in Pharmacovigilance & Drug Safety',
+        durationWeeks: 6,
+        accreditationBody: 'Exon Sciences',
+        isFeatured: true,
+        isPublished: true,
+        sortOrder: 1,
+        courses: {
+          create: [
+            ...(pvCourse ? [{ courseId: pvCourse.id, order: 1 }] : []),
+            ...(aeCourse ? [{ courseId: aeCourse.id, order: 2 }] : []),
+          ],
+        },
+      },
+    });
+    console.log('✅ Programme created: Pharmacovigilance & Drug Safety Certificate');
+  } else {
+    console.log('ℹ️  Pharmacovigilance programme already exists, skipping');
+  }
+
+  // ── UK Clinical Trial Management Programme ──────────────────
+  const ctProgram = await prisma.program.findUnique({
+    where: { slug: 'clinical-trial-management-certificate' },
+  });
+  if (!ctProgram) {
+    const ctCourse  = await prisma.course.findUnique({ where: { slug: 'clinical-trial-uk-startup-to-closure' } });
+    const gcpCourse = await prisma.course.findUnique({ where: { slug: 'ich-gcp-e6-fundamentals-uk' } });
+    await prisma.program.create({
+      data: {
+        title: 'UK Clinical Trial Management Certificate',
+        slug: 'clinical-trial-management-certificate',
+        description: 'A comprehensive programme for professionals responsible for managing clinical trials in the UK. Covers GCP compliance, site management, trial start-up through to closure, and MHRA regulatory requirements. Designed for CRAs, CRCs, and study coordinators.',
+        awardTitle: 'Certificate in UK Clinical Trial Management',
+        durationWeeks: 10,
+        accreditationBody: 'ACRP',
+        isFeatured: true,
+        isPublished: true,
+        sortOrder: 2,
+        courses: {
+          create: [
+            ...(gcpCourse ? [{ courseId: gcpCourse.id, order: 1 }] : []),
+            ...(ctCourse  ? [{ courseId: ctCourse.id,  order: 2 }] : []),
+          ],
+        },
+      },
+    });
+    console.log('✅ Programme created: UK Clinical Trial Management Certificate');
+  } else {
+    console.log('ℹ️  Clinical Trial Management programme already exists, skipping');
+  }
+
   console.log('\n🎉 Seed complete!\n');
   console.log('─────────────────────────────────────────');
   console.log('Login credentials:');

@@ -23,6 +23,7 @@ const certificates_module_1 = require("./certificates/certificates.module");
 const admin_module_1 = require("./admin/admin.module");
 const payments_module_1 = require("./payments/payments.module");
 const subscribe_module_1 = require("./subscribe/subscribe.module");
+const legal_module_1 = require("./legal/legal.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -44,6 +45,7 @@ exports.AppModule = AppModule = __decorate([
             admin_module_1.AdminModule,
             payments_module_1.PaymentsModule,
             subscribe_module_1.SubscribeModule,
+            legal_module_1.LegalModule,
         ],
     })
 ], AppModule);

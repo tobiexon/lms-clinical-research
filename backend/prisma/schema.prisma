@@ -507,3 +507,22 @@ model NewsletterSubscriber {
 
   @@map("newsletter_subscribers")
 }
+
+// ─────────────────────────────────────────
+// LEGAL DOCUMENTS (Privacy Policy, T&C)
+// ─────────────────────────────────────────
+enum LegalDocType {
+  PRIVACY_POLICY
+  TERMS_OF_SERVICE
+}
+
+model LegalDocument {
+  id        String       @id @default(cuid())
+  type      LegalDocType @unique
+  title     String
+  content   String       @db.Text
+  updatedAt DateTime     @updatedAt
+  updatedBy String?      // admin user id who last edited
+
+  @@map("legal_documents")
+}

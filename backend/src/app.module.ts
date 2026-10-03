@@ -14,6 +14,7 @@ import { CertificatesModule } from './certificates/certificates.module';
 import { AdminModule } from './admin/admin.module';
 import { PaymentsModule } from './payments/payments.module';
 import { SubscribeModule } from './subscribe/subscribe.module';
+import { LegalModule } from './legal/legal.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SubscribeModule } from './subscribe/subscribe.module';
     AdminModule,
     PaymentsModule,
     SubscribeModule,
+    LegalModule,
   ],
 })
 export class AppModule {}

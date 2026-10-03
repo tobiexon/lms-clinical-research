@@ -167,7 +167,16 @@ export const paymentsApi = {
   getPayment: (id: string) => api.get(`/payments/${id}`),
 };
 
-// ── Admin — content management ────────────────────────────────
+// ── Legal documents ───────────────────────────────────────────
+export const legalApi = {
+  getPrivacyPolicy: () => api.get('/legal/privacy-policy'),
+  getTermsOfService: () => api.get('/legal/terms-of-service'),
+  // Admin only
+  updatePrivacyPolicy: (data: { title?: string; content: string }) =>
+    api.put('/legal/privacy-policy', data),
+  updateTermsOfService: (data: { title?: string; content: string }) =>
+    api.put('/legal/terms-of-service', data),
+};
 export const adminApi = {
   // Stats
   getStats: () => api.get('/admin/stats'),

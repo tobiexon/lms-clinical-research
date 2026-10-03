@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authApi } from '@/lib/api';
 import Cookies from 'js-cookie';
+import PolicyModal from '@/components/legal/PolicyModal';
 
 const COUNTRIES = [
   { code: 'GB', name: 'United Kingdom' },
@@ -33,6 +34,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState<'privacy' | 'terms' | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -152,10 +154,22 @@ export default function RegisterPage() {
                 className="mt-1"
               />
               <label htmlFor="gdpr" className="text-sm text-gray-600">
-                I agree to Exon Sciences&apos;{' '}
-                <Link href="/privacy" className="text-primary-700 underline">Privacy Policy</Link>
+                I agree to Clinical Research Nexus&apos;{' '}
+                <button
+                  type="button"
+                  onClick={() => setModal('privacy')}
+                  className="text-primary-700 underline hover:text-primary-900"
+                >
+                  Privacy Policy
+                </button>
                 {' '}and{' '}
-                <Link href="/terms" className="text-primary-700 underline">Terms of Service</Link>.
+                <button
+                  type="button"
+                  onClick={() => setModal('terms')}
+                  className="text-primary-700 underline hover:text-primary-900"
+                >
+                  Terms of Service
+                </button>.
                 I understand my data will be processed in accordance with UK GDPR.
               </label>
             </div>
@@ -177,6 +191,9 @@ export default function RegisterPage() {
           </p>
         </div>
       </div>
+
+      {/* Policy modals */}
+      {modal && <PolicyModal type={modal} onClose={() => setModal(null)} />}
     </main>
   );
 }

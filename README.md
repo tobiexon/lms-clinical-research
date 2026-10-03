@@ -105,8 +105,3 @@ In
 Restart both the backend and frontend dev servers
 For testing, use Stripe's test cards: 4242 4242 4242 4242 (any future expiry, any CVV) simulates a successful payment from any country.
 
-# connection string on Neon for PROD: postgresql://neondb_owner:npg_TsfClProEp76@ep-still-salad-b4bob4ko-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-
-# connection string on Neon for DEV: postgresql://neondb_owner:npg_TsfClProEp76@ep-small-moon-b4et38ty-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-
-# Github Account:  t.obi@exonsciences.co.uk

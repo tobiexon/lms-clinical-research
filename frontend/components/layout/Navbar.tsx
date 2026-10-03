@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
@@ -8,18 +8,20 @@ import Logo from './Logo';
 import CartIcon from '@/components/cart/CartIcon';
 import MyCoursesMenu from '@/components/course/MyCoursesMenu';
 
-const NAV_LINKS = [
-  { href: '/courses', label: 'All Courses' },
-  { href: '/programs', label: 'Programmes' },
-  { href: '/certificates/verify', label: 'Verify Certificate' },
+const ABOUT_LINKS = [
+  { href: '/about',   label: 'About Us',    desc: 'Our mission and team' },
+  { href: '/contact', label: 'Contact Us',  desc: 'Get in touch with us' },
 ];
 
 export default function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [user, setUser] = useState<{ firstName: string; role: string } | null>(null);
-  const pathname = usePathname();
-  const router = useRouter();
+  const [menuOpen, setMenuOpen]       = useState(false);
+  const [aboutOpen, setAboutOpen]     = useState(false);
+  const [user, setUser]               = useState<{ firstName: string; role: string } | null>(null);
+  const pathname  = usePathname();
+  const router    = useRouter();
+  const aboutRef  = useRef<HTMLDivElement>(null);
 
+  // Load user
   useEffect(() => {
     const token = Cookies.get('access_token');
     if (!token) { setUser(null); return; }
@@ -31,6 +33,17 @@ export default function Navbar() {
       .catch(() => setUser(null));
   }, [pathname]);
 
+  // Close about dropdown when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (aboutRef.current && !aboutRef.current.contains(e.target as Node)) {
+        setAboutOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
   function logout() {
     Cookies.remove('access_token');
     Cookies.remove('refresh_token');
@@ -41,6 +54,7 @@ export default function Navbar() {
   }
 
   const isAdmin = user && ['ADMIN', 'SUPER_ADMIN', 'CONTENT_EDITOR'].includes(user.role);
+  const isAboutActive = pathname?.startsWith('/about') || pathname?.startsWith('/contact');
 
   if (pathname?.startsWith('/admin')) return null;
 
@@ -63,19 +77,88 @@ export default function Navbar() {
 
           {/* Desktop nav links */}
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname === link.href || pathname?.startsWith(link.href + '/')
+
+            {/* All Courses */}
+            <Link
+              href="/courses"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname === '/courses' || pathname?.startsWith('/courses/')
+                  ? 'text-white bg-white/10'
+                  : 'text-cyan-200 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              All Courses
+            </Link>
+
+            {/* Programmes */}
+            <Link
+              href="/programs"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname === '/programs' || pathname?.startsWith('/programs/')
+                  ? 'text-white bg-white/10'
+                  : 'text-cyan-200 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Programmes
+            </Link>
+
+            {/* Library */}
+            <Link
+              href="/library"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname === '/library'
+                  ? 'text-white bg-white/10'
+                  : 'text-cyan-200 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Library
+            </Link>
+
+            {/* Verify Certificate */}
+            <Link
+              href="/certificates/verify"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                pathname?.startsWith('/certificates')
+                  ? 'text-white bg-white/10'
+                  : 'text-cyan-200 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              Verify Certificate
+            </Link>
+
+            {/* About Us dropdown — rightmost nav item */}
+            <div ref={aboutRef} className="relative">
+              <button
+                onClick={() => setAboutOpen((o) => !o)}
+                className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isAboutActive || aboutOpen
                     ? 'text-white bg-white/10'
                     : 'text-cyan-200 hover:text-white hover:bg-white/10'
                 }`}
               >
-                {link.label}
-              </Link>
-            ))}
+                About
+                <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${aboutOpen ? 'rotate-180' : ''}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {aboutOpen && (
+                <div className="absolute right-0 top-full mt-1 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                  {ABOUT_LINKS.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setAboutOpen(false)}
+                      className="flex flex-col px-4 py-2.5 hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="text-sm font-semibold text-gray-900">{link.label}</span>
+                      <span className="text-xs text-gray-400 mt-0.5">{link.desc}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Desktop right: cart + auth */}
@@ -83,7 +166,6 @@ export default function Navbar() {
             <CartIcon />
             {user ? (
               <>
-                {/* My Courses dropdown — only for logged-in users */}
                 <MyCoursesMenu />
                 {isAdmin && (
                   <Link href="/admin"
@@ -136,13 +218,23 @@ export default function Navbar() {
         {/* Mobile dropdown menu */}
         {menuOpen && (
           <div className="md:hidden border-t border-white/10 py-3 space-y-1 pb-4">
-            {NAV_LINKS.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMenuOpen(false)}
-                className="block px-4 py-2.5 text-sm text-cyan-200 hover:text-white hover:bg-white/10 rounded-lg"
-              >
+            {/* About section */}
+            <p className="px-4 pt-1 pb-0.5 text-[10px] font-bold text-cyan-500 uppercase tracking-widest">About</p>
+            {ABOUT_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm text-cyan-200 hover:text-white hover:bg-white/10 rounded-lg">
+                {link.label}
+              </Link>
+            ))}
+            <div className="my-1 border-t border-white/10" />
+            {[
+              { href: '/courses',             label: 'All Courses' },
+              { href: '/programs',            label: 'Programmes' },
+              { href: '/library',             label: 'Library' },
+              { href: '/certificates/verify', label: 'Verify Certificate' },
+            ].map((link) => (
+              <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2.5 text-sm text-cyan-200 hover:text-white hover:bg-white/10 rounded-lg">
                 {link.label}
               </Link>
             ))}
@@ -157,9 +249,7 @@ export default function Navbar() {
                       Admin Panel
                     </Link>
                   )}
-                  <button onClick={logout} className="text-sm text-left text-cyan-400">
-                    Sign out
-                  </button>
+                  <button onClick={logout} className="text-sm text-left text-cyan-400">Sign out</button>
                 </>
               ) : (
                 <>
@@ -176,7 +266,6 @@ export default function Navbar() {
             </div>
           </div>
         )}
-
       </div>
     </header>
   );

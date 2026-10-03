@@ -30,6 +30,30 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
   'investigator-training':     'from-[#1a2a2a] to-[#2d6e6e]',
 };
 
+// ── Programme banner visuals — matched by slug ───────────────
+const PROGRAMME_VISUALS: Record<string, { gradient: string; icon: string; tag: string }> = {
+  'cra-foundation-certificate': {
+    gradient: 'from-[#0d2233] to-[#1a4a6e]',
+    icon: '🔬',
+    tag: 'Clinical Research Practice',
+  },
+  'pharmacovigilance-certificate': {
+    gradient: 'from-[#1a2a1a] to-[#2d6e3e]',
+    icon: '💊',
+    tag: 'Drug Safety & Monitoring',
+  },
+  'clinical-trial-management-certificate': {
+    gradient: 'from-[#1a1a2e] to-[#2d3e6e]',
+    icon: '📋',
+    tag: 'Trial Operations & Compliance',
+  },
+  'default': {
+    gradient: 'from-[#055d69] to-[#0d2233]',
+    icon: '🎓',
+    tag: 'Structured Learning Pathway',
+  },
+};
+
 async function getAllCourses() {
   try {
     // Fetch 6 published courses for homepage — no featured filter needed
@@ -181,18 +205,18 @@ export default async function HomePage() {
                       {/* ── Card body ── */}
                       <div className="p-4 flex flex-col flex-1">
                         {/* Course name */}
-                        <h4 className="font-extrabold text-gray-900 text-xs uppercase mb-1.5 leading-snug">
+                        <h4 className="font-extrabold text-[#0d2233] text-[15px] uppercase mb-2 leading-snug">
                           {course.title}
                         </h4>
 
                         {/* Description */}
-                        <p className="text-xs text-gray-600 leading-relaxed mb-3 flex-1 line-clamp-3">
+                        <p className="text-sm text-gray-600 text-[#000000] leading-relaxed mb-3 flex-1">
                           {course.subtitle || course.description}
                         </p>
 
                         {/* Meta row */}
                         <div className="flex items-center gap-3 text-xs text-gray-500 mb-3 flex-wrap">
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 text-[13px]">
                             <svg className="w-3.5 h-3.5 text-[#c9a84c] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                             </svg>
@@ -211,7 +235,7 @@ export default async function HomePage() {
 
                         {/* CTA */}
                         <Link href={`/courses/${course.slug}`}
-                          className="block w-full text-center bg-[#c9a84c] hover:bg-[#b8973b] text-white text-xs font-semibold py-2.5 rounded transition-colors mt-auto">
+                          className="block w-full text-center bg-[#c9a84c] hover:bg-[#b8973b] text-white text-sm font-semibold py-2.5 rounded transition-colors mt-auto">
                           View more
                         </Link>
                       </div>
@@ -316,20 +340,68 @@ export default async function HomePage() {
               Structured pathways that lead to recognised qualifications
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {programs.map((program: any) => (
-                <Link key={program.id} href={`/programs/${program.slug}`}>
-                  <div className="border border-gray-200 rounded-lg p-6 h-full flex flex-col hover:border-[#c9a84c] hover:shadow-md transition-all bg-white">
-                    <h3 className="font-extrabold text-gray-900 text-sm uppercase mb-2">{program.title}</h3>
-                    <p className="text-sm text-gray-600 mb-4 flex-1">
-                      {program.courses?.length || 0} courses · {program.durationWeeks} weeks
-                    </p>
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                      <span className="text-xs text-[#c9a84c] font-semibold">{program.awardTitle}</span>
-                      <span className="text-[#c9a84c] font-bold">→</span>
+              {programs.map((program: any) => {
+                const visual = PROGRAMME_VISUALS[program.slug] || PROGRAMME_VISUALS['default'];
+                return (
+                  <Link key={program.id} href={`/programs/${program.slug}`}>
+                    <div className="border border-gray-200 rounded-xl overflow-hidden h-full flex flex-col hover:border-[#c9a84c] hover:shadow-lg transition-all bg-white group">
+
+                      {/* Illustrated banner */}
+                      <div className={`relative w-full h-44 bg-gradient-to-br ${visual.gradient} overflow-hidden flex items-center justify-center`}>
+                        {/* Decorative background pattern */}
+                        <div className="absolute inset-0 opacity-10">
+                          <svg width="100%" height="100%" viewBox="0 0 200 100">
+                            <circle cx="160" cy="20"  r="60" fill="white" />
+                            <circle cx="20"  cy="80"  r="40" fill="white" />
+                          </svg>
+                        </div>
+                        {/* Programme icon illustration */}
+                        <div className="relative z-10 flex flex-col items-center gap-2">
+                          <div className="text-6xl">{visual.icon}</div>
+                          <span className="text-white/80 text-xs font-semibold uppercase tracking-widest">
+                            {visual.tag}
+                          </span>
+                        </div>
+                        {/* Duration badge */}
+                        {program.durationWeeks && (
+                          <div className="absolute top-3 right-3 bg-black/30 text-white text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                            {program.durationWeeks} weeks
+                          </div>
+                        )}
+                        {/* Accreditation badge */}
+                        {program.accreditationBody && (
+                          <div className="absolute bottom-3 left-3 bg-[#c9a84c] text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wide">
+                            {program.accreditationBody}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Card body */}
+                      <div className="p-5 flex flex-col flex-1">
+                        <h3 className="font-extrabold text-[#0d2233] text-[15px] uppercase leading-snug mb-2 group-hover:text-[#c9a84c] transition-colors">
+                          {program.title}
+                        </h3>
+                        {program.description && (
+                          <p className="text-sm text-gray-500 leading-relaxed mb-4 flex-1 line-clamp-3">
+                            {program.description}
+                          </p>
+                        )}
+                        {!program.description && (
+                          <p className="text-sm text-gray-500 mb-4 flex-1">
+                            {program.courses?.length || 0} courses · {program.durationWeeks} weeks
+                          </p>
+                        )}
+                        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                          <span className="text-xs text-[#c9a84c] font-semibold leading-snug max-w-[80%]">
+                            {program.awardTitle}
+                          </span>
+                          <span className="text-[#c9a84c] font-bold text-lg group-hover:translate-x-1 transition-transform">→</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>

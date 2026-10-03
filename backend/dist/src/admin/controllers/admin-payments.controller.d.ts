@@ -8,30 +8,32 @@ export declare class AdminPaymentsController {
         payments: ({
             user: {
                 id: string;
+                email: string;
                 firstName: string;
                 lastName: string;
-                email: string;
                 country: string;
             };
             items: {
                 id: string;
                 createdAt: Date;
                 courseId: string;
+                enrollmentId: string | null;
                 courseTitle: string;
                 courseSlug: string;
                 courseCategory: string | null;
                 unitPrice: import("@prisma/client/runtime/library").Decimal;
                 quantity: number;
                 lineTotal: import("@prisma/client/runtime/library").Decimal;
-                enrollmentId: string | null;
                 paymentId: string;
             }[];
         } & {
             id: string;
-            userId: string;
+            email: string;
             firstName: string;
             lastName: string;
-            email: string;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
             status: import(".prisma/client").$Enums.PaymentStatus;
             method: import(".prisma/client").$Enums.PaymentMethod;
             currency: string;
@@ -48,8 +50,6 @@ export declare class AdminPaymentsController {
             notes: string | null;
             paidAt: Date | null;
             refundedAt: Date | null;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
         total: number;
     }>;
@@ -63,9 +63,9 @@ export declare class AdminPaymentsController {
     getPayment(id: string): import(".prisma/client").Prisma.Prisma__PaymentClient<{
         user: {
             id: string;
+            email: string;
             firstName: string;
             lastName: string;
-            email: string;
             country: string;
             paymentStatus: import(".prisma/client").$Enums.PaymentStatus;
         };
@@ -73,21 +73,23 @@ export declare class AdminPaymentsController {
             id: string;
             createdAt: Date;
             courseId: string;
+            enrollmentId: string | null;
             courseTitle: string;
             courseSlug: string;
             courseCategory: string | null;
             unitPrice: import("@prisma/client/runtime/library").Decimal;
             quantity: number;
             lineTotal: import("@prisma/client/runtime/library").Decimal;
-            enrollmentId: string | null;
             paymentId: string;
         }[];
     } & {
         id: string;
-        userId: string;
+        email: string;
         firstName: string;
         lastName: string;
-        email: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         status: import(".prisma/client").$Enums.PaymentStatus;
         method: import(".prisma/client").$Enums.PaymentMethod;
         currency: string;
@@ -104,17 +106,17 @@ export declare class AdminPaymentsController {
         notes: string | null;
         paidAt: Date | null;
         refundedAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
     }, null, import("@prisma/client/runtime/library").DefaultArgs>;
     refundPayment(id: string, body: {
         notes?: string;
     }): Promise<{
         id: string;
-        userId: string;
+        email: string;
         firstName: string;
         lastName: string;
-        email: string;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
         status: import(".prisma/client").$Enums.PaymentStatus;
         method: import(".prisma/client").$Enums.PaymentMethod;
         currency: string;
@@ -131,7 +133,5 @@ export declare class AdminPaymentsController {
         notes: string | null;
         paidAt: Date | null;
         refundedAt: Date | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
 }

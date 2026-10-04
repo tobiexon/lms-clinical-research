@@ -42,7 +42,7 @@ const ARTICLES = [
   {
     tag: 'REGULATORY AFFAIRS',
     title: 'The UK Regulatory Landscape Post-Brexit',
-    desc: 'How the UK has diverged from EU regulations since Brexit, what the MHRA's new frameworks mean for clinical trial sponsors, and how to navigate dual UK/EU submissions.',
+    desc: "How the UK has diverged from EU regulations since Brexit, what the MHRA's new frameworks mean for clinical trial sponsors, and how to navigate dual UK/EU submissions.",
     date: 'May 2026',
     color: 'from-[#2a1a1a] to-[#6e2d2d]',
     readTime: '9 min read',

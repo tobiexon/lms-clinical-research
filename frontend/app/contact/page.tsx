@@ -1,19 +1,26 @@
 'use client';
 
 import { useState } from 'react';
+import { contactApi } from '@/lib/api';
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSending(true);
-    // For now, simulate a send — wire to a backend endpoint or email service later
-    await new Promise((r) => setTimeout(r, 800));
-    setSent(true);
-    setSending(false);
+    setError('');
+    try {
+      await contactApi.submit(form);
+      setSent(true);
+    } catch (err: any) {
+      setError(err?.response?.data?.message || 'Failed to send message. Please try again or email us directly.');
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -121,6 +128,9 @@ export default function ContactPage() {
                     className="w-full bg-[#c9a84c] hover:bg-[#b8973b] disabled:opacity-60 text-white font-bold py-3 rounded-lg transition-colors">
                     {sending ? 'Sending...' : 'Send Message'}
                   </button>
+                  {error && (
+                    <p className="text-sm text-red-600 text-center">{error}</p>
+                  )}
                 </form>
               </>
             )}

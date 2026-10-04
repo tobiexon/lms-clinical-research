@@ -167,6 +167,12 @@ export const paymentsApi = {
   getPayment: (id: string) => api.get(`/payments/${id}`),
 };
 
+// ── Contact form ──────────────────────────────────────────────
+export const contactApi = {
+  submit: (data: { name: string; email: string; subject: string; message: string }) =>
+    api.post('/contact', data),
+};
+
 // ── Legal documents ───────────────────────────────────────────
 export const legalApi = {
   getPrivacyPolicy: () => api.get('/legal/privacy-policy'),

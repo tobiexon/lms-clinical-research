@@ -59,6 +59,12 @@ export declare class NotificationsService {
         firstName: string;
         resetToken: string;
     }): Promise<void>;
+    sendContactFormEmail(data: {
+        name: string;
+        email: string;
+        subject: string;
+        message: string;
+    }): Promise<void>;
     sendAdminAlertEmail(subject: string, details: string): Promise<void>;
     sendAdminPaymentNotification(data: {
         payerName: string;

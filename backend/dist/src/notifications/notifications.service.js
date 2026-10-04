@@ -254,6 +254,42 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
     `);
         return this.send(data.email, 'Reset your Clinical Research Nexus password', html);
     }
+    async sendContactFormEmail(data) {
+        const receivedAt = new Date().toLocaleDateString('en-GB', {
+            day: 'numeric', month: 'long', year: 'numeric',
+            hour: '2-digit', minute: '2-digit',
+        });
+        const html = this.baseTemplate(`
+      <h1 style="color:#0d2233;margin:0 0 4px">📩 New Contact Form Submission</h1>
+      <p style="color:#888;font-size:13px;margin:0 0 24px">Received: ${receivedAt}</p>
+
+      <div style="background:#f0f9ff;border:1px solid #c9a84c;padding:16px 20px;border-radius:8px;margin:0 0 20px">
+        <p style="margin:0 0 6px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Sender Details</p>
+        <p style="margin:0 0 4px;font-size:15px;color:#0d2233;font-weight:bold">${data.name}</p>
+        <p style="margin:0 0 4px;font-size:14px;color:#555">
+          <a href="mailto:${data.email}" style="color:#c9a84c">${data.email}</a>
+        </p>
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#888;width:120px">Subject</td>
+          <td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;color:#0d2233;font-weight:600">${data.subject}</td>
+        </tr>
+      </table>
+
+      <div style="margin:0 0 20px">
+        <p style="font-size:13px;color:#888;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px">Message</p>
+        <div style="background:#f9f9f9;border:1px solid #eee;padding:16px 20px;border-radius:8px;font-size:14px;color:#333;line-height:1.7;white-space:pre-wrap">${data.message}</div>
+      </div>
+
+      <p style="color:#888;font-size:13px;margin:0">
+        Reply directly to this email or click
+        <a href="mailto:${data.email}" style="color:#c9a84c">here</a> to respond to ${data.name}.
+      </p>
+    `);
+        return this.send(this.adminEmail, `[CRN Contact] ${data.subject} — from ${data.name}`, html);
+    }
     async sendAdminAlertEmail(subject, details) {
         const html = this.baseTemplate(`
       <h1 style="color:#c0392b;margin:0 0 8px">⚠ Admin Alert</h1>

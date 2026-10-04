@@ -14,94 +14,266 @@ async function getProgram(slug: string) {
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const program = await getProgram(params.slug);
   return program
-    ? { title: `${program.title} — Exon Sciences`, description: program.description }
+    ? { title: `${program.title} — Clinical Research Nexus`, description: program.description }
     : { title: 'Not Found' };
 }
+
+// Per-slug visual config — same approach as the listing page
+const VISUALS: Record<string, { from: string; to: string; icon: string; tag: string }> = {
+  'cra-foundation-certificate':            { from: '#0d2233', to: '#1a4a6e', icon: '🔬', tag: 'Clinical Research Practice' },
+  'pharmacovigilance-certificate':         { from: '#1a2a1a', to: '#2d6e3e', icon: '💊', tag: 'Drug Safety & Monitoring' },
+  'clinical-trial-management-certificate': { from: '#1a1a2e', to: '#2d3e6e', icon: '📋', tag: 'Trial Operations & Compliance' },
+  'default':                               { from: '#055d69', to: '#0d2233', icon: '🎓', tag: 'Structured Learning Pathway' },
+};
 
 export default async function ProgramDetailPage({ params }: { params: { slug: string } }) {
   const program = await getProgram(params.slug);
   if (!program) notFound();
 
   const courses = program.courses?.map((pc: any) => pc.course).filter(Boolean) || [];
+  const visual  = VISUALS[params.slug] || VISUALS['default'];
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-10">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-        <Link href="/programs" className="hover:text-primary-700">Programmes</Link>
-        <span>/</span>
-        <span className="text-gray-700">{program.title}</span>
-      </div>
-
-      <h1 className="text-3xl font-bold text-gray-900 mb-3">{program.title}</h1>
-
-      {program.description && (
-        <p className="text-gray-600 mb-6">{program.description}</p>
-      )}
-
-      <div className="flex flex-wrap gap-2 mb-6">
-        <span className="badge-blue">{courses.length} courses</span>
-        {program.durationWeeks && <span className="badge-amber">{program.durationWeeks} weeks</span>}
-        {program.accreditationBody && <span className="badge-green">{program.accreditationBody}</span>}
-      </div>
-
-      {/* Award banner */}
-      {program.awardTitle && (
-        <div className="bg-primary-50 border border-primary-200 rounded-xl p-5 mb-8">
-          <p className="text-xs font-medium text-primary-500 uppercase tracking-wide mb-1">Award</p>
-          <p className="text-primary-900 font-semibold text-lg">{program.awardTitle}</p>
+    <main>
+      {/* ── Hero banner ─────────────────────────────────────────── */}
+      <section
+        className="relative text-white py-16 px-4 overflow-hidden"
+        style={{ background: `linear-gradient(135deg, ${visual.from} 0%, ${visual.to} 100%)` }}
+      >
+        {/* Decorative circles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-10">
+          <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white" />
+          <div className="absolute -bottom-10 -left-10 w-56 h-56 rounded-full bg-white" />
         </div>
-      )}
 
-      {/* Courses list */}
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">
-        Courses in this Programme
-      </h2>
+        <div className="max-w-5xl mx-auto relative z-10">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-xs text-white/60 mb-6 flex-wrap">
+            <Link href="/" className="hover:text-white transition-colors">Home</Link>
+            <span>/</span>
+            <Link href="/programs" className="hover:text-white transition-colors">Programmes</Link>
+            <span>/</span>
+            <span className="text-white/90">{program.title}</span>
+          </div>
 
-      {courses.length === 0 ? (
-        <p className="text-gray-500 text-sm">No courses added to this programme yet.</p>
-      ) : (
-        <div className="space-y-3">
-          {courses.map((course: any, i: number) => (
-            <Link key={course.id} href={`/courses/${course.slug}`}>
-              <div className="card p-5 flex items-center gap-4 hover:border-primary-300">
-                <span className="w-9 h-9 rounded-full bg-primary-100 text-primary-700 text-sm font-bold flex items-center justify-center shrink-0">
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-gray-900 truncate">{course.title}</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {course.durationHours && `${course.durationHours}h`}
-                    {course.difficultyLevel && ` · ${course.difficultyLevel.toLowerCase()}`}
-                    {course.category?.name && ` · ${course.category.name}`}
-                  </p>
+          <div className="flex flex-col md:flex-row md:items-start gap-8">
+            {/* Left: text */}
+            <div className="flex-1">
+              {/* Tag */}
+              <div className="inline-flex items-center gap-2 bg-white/15 text-white text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4">
+                <span className="text-base">{visual.icon}</span>
+                {visual.tag}
+              </div>
+
+              <h1 className="text-3xl md:text-4xl font-extrabold text-white uppercase leading-tight mb-4">
+                {program.title}
+              </h1>
+
+              {program.description && (
+                <p className="text-white/80 text-base leading-relaxed max-w-2xl mb-6">
+                  {program.description}
+                </p>
+              )}
+
+              {/* Stats row */}
+              <div className="flex flex-wrap gap-6 text-sm text-white/80">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#c9a84c] text-lg font-bold">{courses.length}</span>
+                  <span>Course{courses.length !== 1 ? 's' : ''}</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {course.isPublished ? (
-                    <span className="badge-green text-xs">Available</span>
-                  ) : (
-                    <span className="badge text-xs bg-gray-100 text-gray-500">Coming soon</span>
-                  )}
-                  <span className="text-primary-600">→</span>
+                {program.durationWeeks && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#c9a84c] text-lg font-bold">{program.durationWeeks}</span>
+                    <span>Weeks</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <span className="text-[#c9a84c] text-lg font-bold">✓</span>
+                  <span>Certificate Included</span>
                 </div>
               </div>
-            </Link>
-          ))}
-        </div>
-      )}
+            </div>
 
-      {/* CTA */}
-      <div className="mt-10 p-6 bg-primary-50 border border-primary-200 rounded-xl text-center">
-        <h3 className="font-semibold text-gray-900 mb-2">Ready to start your journey?</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Enrol in the first course to begin working towards your {program.awardTitle || 'certificate'}.
-        </p>
-        {courses[0] && (
-          <Link href={`/courses/${courses[0].slug}`} className="btn-primary">
-            Start with {courses[0].title}
-          </Link>
-        )}
-      </div>
+            {/* Right: award card */}
+            {program.awardTitle && (
+              <div className="md:w-72 shrink-0 bg-white/10 border border-white/20 backdrop-blur-sm rounded-2xl p-6">
+                <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Award on Completion</p>
+                <p className="text-white font-extrabold text-base leading-snug mb-4">{program.awardTitle}</p>
+                {program.accreditationBody && (
+                  <div className="flex items-center gap-2">
+                    <span className="bg-[#c9a84c] text-white text-[10px] font-bold px-2 py-1 rounded uppercase">
+                      {program.accreditationBody}
+                    </span>
+                    <span className="text-white/60 text-xs">Accredited</span>
+                  </div>
+                )}
+                {courses[0] && (
+                  <Link
+                    href={`/courses/${courses[0].slug}`}
+                    className="mt-5 block w-full text-center bg-[#c9a84c] hover:bg-[#b8973b] text-white font-bold py-3 rounded-xl text-sm transition-colors"
+                  >
+                    Enrol Now →
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Main content ─────────────────────────────────────────── */}
+      <section className="py-12 px-4 bg-gray-50">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+
+            {/* Courses list — main column */}
+            <div className="lg:col-span-2">
+              <h2 className="text-xl font-extrabold text-gray-900 uppercase mb-6 flex items-center gap-3">
+                <span className="w-1 h-6 bg-[#c9a84c] rounded-full inline-block" />
+                Courses in this Programme
+              </h2>
+
+              {courses.length === 0 ? (
+                <div className="bg-white border border-dashed border-gray-300 rounded-xl p-10 text-center">
+                  <p className="text-gray-400 text-sm">Courses are being added to this programme.</p>
+                  <Link href="/courses" className="text-[#c9a84c] text-sm font-semibold mt-3 inline-block hover:underline">
+                    Browse all courses →
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {courses.map((course: any, i: number) => (
+                    <Link key={course.id} href={`/courses/${course.slug}`}>
+                      <div className="bg-white border border-gray-200 rounded-xl p-5 flex items-start gap-4 hover:border-[#c9a84c] hover:shadow-md transition-all group">
+                        {/* Step number */}
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-extrabold text-sm"
+                          style={{ background: `linear-gradient(135deg, ${visual.from}, ${visual.to})` }}
+                        >
+                          {i + 1}
+                        </div>
+
+                        {/* Course info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-extrabold text-[#0d2233] text-[15px] uppercase leading-snug group-hover:text-[#c9a84c] transition-colors">
+                            {course.title}
+                          </h3>
+                          {course.subtitle && (
+                            <p className="text-sm text-gray-500 mt-1 leading-relaxed">{course.subtitle}</p>
+                          )}
+                          <div className="flex flex-wrap gap-3 mt-2 text-xs text-gray-400">
+                            {course.durationHours > 0 && (
+                              <span className="flex items-center gap-1">⏱ {course.durationHours}+ hours</span>
+                            )}
+                            {course.difficultyLevel && (
+                              <span className="flex items-center gap-1">📊 {course.difficultyLevel.charAt(0) + course.difficultyLevel.slice(1).toLowerCase()}</span>
+                            )}
+                            {course.category?.name && (
+                              <span className="flex items-center gap-1">🏷 {course.category.name}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Status + arrow */}
+                        <div className="flex items-center gap-3 shrink-0">
+                          {course.isPublished ? (
+                            <span className="bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold px-2 py-1 rounded-full uppercase">
+                              Available
+                            </span>
+                          ) : (
+                            <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-1 rounded-full uppercase">
+                              Coming soon
+                            </span>
+                          )}
+                          <span className="text-[#c9a84c] font-bold text-lg group-hover:translate-x-1 transition-transform">→</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-5">
+
+              {/* Programme summary card */}
+              <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div
+                  className="px-5 py-4"
+                  style={{ background: `linear-gradient(135deg, ${visual.from}, ${visual.to})` }}
+                >
+                  <p className="text-white/60 text-xs uppercase tracking-widest mb-1">Programme Overview</p>
+                  <p className="text-white font-extrabold text-base">{program.title}</p>
+                </div>
+                <div className="p-5 space-y-3 text-sm">
+                  {[
+                    { icon: '📚', label: 'Courses',        value: `${courses.length} course${courses.length !== 1 ? 's' : ''}` },
+                    { icon: '⏱',  label: 'Duration',       value: program.durationWeeks ? `${program.durationWeeks} weeks` : 'Self-paced' },
+                    { icon: '🏅', label: 'Award',          value: program.awardTitle || 'Certificate' },
+                    { icon: '✅', label: 'Accreditation',  value: program.accreditationBody || 'Exon Sciences' },
+                    { icon: '🔄', label: 'Access',         value: 'Lifetime' },
+                    { icon: '📱', label: 'Format',         value: 'Online, Self-paced' },
+                  ].map((row) => (
+                    <div key={row.label} className="flex items-start gap-2.5">
+                      <span className="shrink-0">{row.icon}</span>
+                      <span className="text-gray-500 w-24 shrink-0">{row.label}</span>
+                      <span className="text-gray-900 font-medium leading-snug">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Why this programme */}
+              <div className="bg-[#0d2233] text-white rounded-xl p-5 space-y-3">
+                <p className="font-extrabold text-sm uppercase tracking-wide mb-3">Why This Programme?</p>
+                {[
+                  'UK regulatory framework aligned',
+                  'Verifiable certificate on completion',
+                  'Learn at your own pace',
+                  'Lifetime access to all materials',
+                  'Taught by practising professionals',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2.5">
+                    <span className="text-[#c9a84c] font-bold shrink-0">✓</span>
+                    <span className="text-cyan-200 text-sm">{item}</span>
+                  </div>
+                ))}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA section ──────────────────────────────────────────── */}
+      <section className="py-14 px-4 bg-white border-t border-gray-100">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl font-extrabold text-gray-900 uppercase mb-3">
+            Ready to Start Your Journey?
+          </h2>
+          <p className="text-gray-500 mb-7 text-base">
+            Enrol in the first course to begin working towards your{' '}
+            <span className="text-[#0d2233] font-semibold">{program.awardTitle || 'certificate'}</span>.
+          </p>
+          <div className="flex flex-wrap gap-4 justify-center">
+            {courses[0] && (
+              <Link
+                href={`/courses/${courses[0].slug}`}
+                className="bg-[#c9a84c] hover:bg-[#b8973b] text-white font-bold px-10 py-3.5 rounded-xl transition-colors shadow-md"
+              >
+                Start with {courses[0].title}
+              </Link>
+            )}
+            <Link
+              href="/programs"
+              className="border border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold px-8 py-3.5 rounded-xl transition-colors"
+            >
+              ← All Programmes
+            </Link>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }

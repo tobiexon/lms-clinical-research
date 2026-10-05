@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { adminApi } from '@/lib/api';
 
 export default function EditCoursePage() {
@@ -96,9 +97,20 @@ export default function EditCoursePage() {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Edit Course</h1>
-        <button onClick={() => router.push('/admin/courses')} className="text-sm text-gray-500 hover:text-gray-700">
-          ← Back to courses
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/admin/courses/${id}/lessons`}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.867v6.266a1 1 0 01-1.447.902L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+            Manage Lessons &amp; Videos
+          </Link>
+          <button onClick={() => router.push('/admin/courses')} className="text-sm text-gray-500 hover:text-gray-700">
+            ← Back to courses
+          </button>
+        </div>
       </div>
 
       {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm">{error}</div>}

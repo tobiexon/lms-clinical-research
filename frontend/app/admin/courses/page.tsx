@@ -75,6 +75,10 @@ export default function AdminCoursesPage() {
                   </td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <Link href={`/admin/courses/${course.id}/lessons`}
+                        className="text-xs text-blue-600 hover:underline font-medium">
+                        Videos
+                      </Link>
                       <Link href={`/admin/courses/${course.id}`} className="text-xs text-primary-700 hover:underline">Edit</Link>
                       <button onClick={() => deleteCourse(course.id, course.title)} className="text-xs text-red-500 hover:underline">Delete</button>
                     </div>

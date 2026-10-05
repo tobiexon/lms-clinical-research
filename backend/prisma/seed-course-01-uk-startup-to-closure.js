@@ -12,27 +12,27 @@ const prisma = new PrismaClient();
 const COURSE_SLUG = 'clinical-trial-uk-startup-to-closure';
 
 // ─────────────────────────────────────────────────────────
-// VERIFIED YOUTUBE VIDEO URLs
-// These are from official/established clinical research channels.
-// Replace with your own recordings when ready.
+// VIDEO URLS
+// Currently set to null — shows "Video Coming Soon" placeholder.
+// Replace each null with your actual video URL when ready.
+// Supported formats (update videoUrl in any lesson):
+//   YouTube:      https://www.youtube.com/watch?v=VIDEO_ID
+//   Vimeo:        https://vimeo.com/VIDEO_ID
+//   Bunny Stream: https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID
+//   Wistia:       https://fast.wistia.com/medias/VIDEO_ID
+//   Loom:         https://www.loom.com/share/VIDEO_ID
+//   Google Drive: https://drive.google.com/file/d/FILE_ID/view
+//   Direct MP4:   https://your-cdn.com/videos/lesson-01.mp4
 // ─────────────────────────────────────────────────────────
 const VIDEOS = {
-  // "Drug Development Process" — ClinicalTrials.gov / NLM official overview
-  drugLifecycle: 'https://www.youtube.com/watch?v=Z5TGMkDV2nw',
-  // "Understanding Clinical Trials" — NHS England official channel
-  ukRegulatory: 'https://www.youtube.com/watch?v=4KKDHxDDJhA',
-  // "How are Clinical Trials Designed?" — ClinicalTrials.gov NLM
-  feasibilitySsv: 'https://www.youtube.com/watch?v=NRTnqZuqUlo',
-  // "Good Clinical Practice (GCP) Training" — widely used training overview
-  sivDocs: 'https://www.youtube.com/watch?v=3YpY5WwLCac',
-  // "Source Data Verification in Clinical Trials" — CCRPS Training
-  monitoring: 'https://www.youtube.com/watch?v=vkE-vMV09hw',
-  // "Adverse Events in Clinical Trials" — FDA official video
-  adverseEvents: 'https://www.youtube.com/watch?v=2v5pEMndNLc',
-  // "Data Integrity in Clinical Research" — MHRA/NIHR aligned overview
-  dataQuality: 'https://www.youtube.com/watch?v=Zj0UQKB4Y3A',
-  // "Clinical Trial Close-out" — ResearchAmerica/industry overview
-  closure: 'https://www.youtube.com/watch?v=tCr2HijCWdc',
+  drugLifecycle:  null,   // Module 1 Lesson 1 — replace with your recording
+  ukRegulatory:   null,   // Module 1 Lesson 3 — replace with your recording
+  feasibilitySsv: null,   // Module 2 Lesson 1 — replace with your recording
+  sivDocs:        null,   // Module 3 Lesson 1 — replace with your recording
+  monitoring:     null,   // Module 4 Lesson 1 — replace with your recording
+  adverseEvents:  null,   // Module 4 Lesson 2 — replace with your recording
+  dataQuality:    null,   // Module 5 Lesson 1 — replace with your recording
+  closure:        null,   // Module 6 Lesson 1 — replace with your recording
 };
 
 // ─────────────────────────────────────────────────────────

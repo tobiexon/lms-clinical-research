@@ -227,29 +227,41 @@ export default function LearnPage() {
                   {module.lessons.sort((a, b) => a.order - b.order).map((lesson) => {
                     const done = completedLessons.includes(lesson.id);
                     const active = activeLesson?.id === lesson.id;
+                    const isVideo = lesson.lessonType === 'VIDEO';
                     return (
                       <button key={lesson.id} onClick={() => goToLesson(lesson)}
-                        className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-all border-l-3 border-l-2 ${
+                        className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-all border-l-2 ${
                           active
-                            ? 'bg-[#c9a84c]/10 border-l-[#c9a84c] border-l-2'
+                            ? 'bg-blue-50 border-l-blue-500'
+                            : done
+                            ? 'border-l-transparent opacity-70'
                             : 'border-l-transparent hover:bg-gray-50 hover:border-l-gray-300'
                         }`}>
-                        <span className={`text-sm shrink-0 mt-0.5 ${done ? 'text-green-500' : active ? 'text-[#c9a84c]' : 'text-gray-300'}`}>
-                          {done ? '✓' : lesson.lessonType === 'VIDEO' ? '▶' : '📝'}
+                        {/* Icon — blue play for video, green doc for text */}
+                        <span className={`text-sm shrink-0 mt-0.5 ${
+                          done ? 'text-green-500' :
+                          active ? (isVideo ? 'text-blue-600' : 'text-green-600') :
+                          isVideo ? 'text-blue-400' : 'text-green-500'
+                        }`}>
+                          {done ? '✓' : isVideo ? '▶' : '📄'}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs leading-snug ${
-                            active ? 'text-[#0d2233] font-semibold' :
-                            done ? 'text-gray-400 line-through' :
-                            'text-gray-700'
+                          <p className={`text-xs leading-snug font-semibold ${
+                            active
+                              ? (isVideo ? 'text-blue-700' : 'text-green-700')
+                              : done
+                              ? 'text-gray-400 line-through font-normal'
+                              : isVideo ? 'text-blue-600' : 'text-green-700'
                           }`}>
                             {lesson.title}
                           </p>
-                          {lesson.videoDurationMinutes && (
-                            <p className="text-[10px] text-gray-400 mt-0.5">{lesson.videoDurationMinutes} min</p>
-                          )}
+                          <p className={`text-[10px] mt-0.5 font-medium ${
+                            isVideo ? 'text-blue-400' : 'text-green-500'
+                          }`}>
+                            {isVideo ? `▶ Video${lesson.videoDurationMinutes ? ` · ${lesson.videoDurationMinutes} min` : ''}` : '📄 Reading'}
+                          </p>
                         </div>
-                        {done && <span className="text-[10px] text-green-500 shrink-0 mt-0.5">✓</span>}
+                        {done && <span className="text-[10px] text-green-500 shrink-0 mt-0.5 font-bold">✓</span>}
                       </button>
                     );
                   })}
@@ -273,34 +285,9 @@ export default function LearnPage() {
               {activeLesson.lessonType === 'VIDEO' && (
                 <div className="mb-6">
                   {activeLesson.videoUrl ? (
-                    <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
-                      {activeLesson.videoUrl.includes('youtube.com') || activeLesson.videoUrl.includes('youtu.be') ? (
-                        <iframe
-                          className="absolute inset-0 w-full h-full"
-                          src={`https://www.youtube.com/embed/${extractYouTubeId(activeLesson.videoUrl)}?rel=0`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen title={activeLesson.title}
-                        />
-                      ) : activeLesson.videoUrl.includes('vimeo.com') ? (
-                        <iframe
-                          className="absolute inset-0 w-full h-full"
-                          src={activeLesson.videoUrl.replace('vimeo.com/', 'player.vimeo.com/video/')}
-                          allow="autoplay; fullscreen; picture-in-picture"
-                          allowFullScreen title={activeLesson.title}
-                        />
-                      ) : (
-                        <video className="absolute inset-0 w-full h-full" controls src={activeLesson.videoUrl}
-                          onEnded={() => markComplete(activeLesson.id)}/>
-                      )}
-                    </div>
+                    <VideoPlayer url={activeLesson.videoUrl} title={activeLesson.title} onEnded={() => markComplete(activeLesson.id)} />
                   ) : (
-                    <div className="w-full bg-gray-200 rounded-xl border border-gray-300 flex items-center justify-center" style={{ paddingTop: '30%', position: 'relative' }}>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-                        <span className="text-4xl mb-2">🎬</span>
-                        <p className="text-sm font-medium">Video coming soon</p>
-                        <p className="text-xs mt-1">Your instructor is preparing this lesson</p>
-                      </div>
-                    </div>
+                    <VideoComingSoon title={activeLesson.title} />
                   )}
                 </div>
               )}
@@ -396,4 +383,129 @@ export default function LearnPage() {
 function extractYouTubeId(url: string): string {
   const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
   return match ? match[1] : url;
+}
+
+function extractVimeoId(url: string): string {
+  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  return match ? match[1] : '';
+}
+
+// ── VideoPlayer — handles YouTube, Vimeo, direct MP4/WebM, and other iframes ──
+function VideoPlayer({ url, title, onEnded }: { url: string; title: string; onEnded: () => void }) {
+  const isYouTube = url.includes('youtube.com') || url.includes('youtu.be');
+  const isVimeo = url.includes('vimeo.com');
+  const isDirectVideo = /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
+  const isWistia = url.includes('wistia.com') || url.includes('wistia.net');
+  const isBunny = url.includes('b-cdn.net') || url.includes('bunny.net') || url.includes('iframe.mediadelivery.net');
+  const isLoom = url.includes('loom.com');
+  const isGoogleDrive = url.includes('drive.google.com');
+
+  // Convert Google Drive share URL to embed URL
+  const driveEmbed = isGoogleDrive
+    ? url.replace('/view', '/preview').replace('?usp=sharing', '')
+    : url;
+
+  if (isYouTube) {
+    const id = extractYouTubeId(url);
+    return (
+      <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
+        <iframe
+          className="absolute inset-0 w-full h-full"
+          src={`https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen title={title}
+        />
+      </div>
+    );
+  }
+
+  if (isVimeo) {
+    const id = extractVimeoId(url);
+    return (
+      <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
+        <iframe
+          className="absolute inset-0 w-full h-full"
+          src={`https://player.vimeo.com/video/${id}?autoplay=0&title=0&byline=0&portrait=0`}
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen title={title}
+        />
+      </div>
+    );
+  }
+
+  if (isWistia) {
+    // Wistia embed: convert share URL to iframe embed
+    const embedUrl = url.includes('/medias/') ? url.replace('/medias/', '/embed/iframe/') : url;
+    return (
+      <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
+        <iframe
+          className="absolute inset-0 w-full h-full"
+          src={embedUrl}
+          allow="autoplay; fullscreen"
+          allowFullScreen title={title}
+        />
+      </div>
+    );
+  }
+
+  if (isBunny || isLoom || isGoogleDrive) {
+    // Generic iframe for Bunny Stream, Loom, Google Drive previews
+    return (
+      <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
+        <iframe
+          className="absolute inset-0 w-full h-full"
+          src={isGoogleDrive ? driveEmbed : url}
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen title={title}
+        />
+      </div>
+    );
+  }
+
+  if (isDirectVideo) {
+    return (
+      <div className="rounded-xl overflow-hidden bg-black">
+        <video
+          className="w-full"
+          controls
+          src={url}
+          onEnded={onEnded}
+          style={{ maxHeight: '540px' }}
+        />
+      </div>
+    );
+  }
+
+  // Fallback — try as generic iframe
+  return (
+    <div className="relative w-full rounded-xl overflow-hidden bg-black" style={{ paddingTop: '56.25%' }}>
+      <iframe
+        className="absolute inset-0 w-full h-full"
+        src={url}
+        allow="autoplay; fullscreen"
+        allowFullScreen title={title}
+      />
+    </div>
+  );
+}
+
+// ── Video Coming Soon placeholder ─────────────────────────────────────────
+function VideoComingSoon({ title }: { title: string }) {
+  return (
+    <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 p-10 text-center">
+      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.867v6.266a1 1 0 01-1.447.902L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <h3 className="text-[#0d2233] font-bold text-lg mb-2">Video Lesson Coming Soon</h3>
+      <p className="text-gray-500 text-sm mb-4 max-w-md mx-auto">
+        The instructor video for <strong>{title}</strong> is being recorded and will be available shortly.
+        The full written lesson content below covers all the same material.
+      </p>
+      <div className="inline-flex items-center gap-2 bg-white border border-blue-200 text-blue-600 text-xs font-semibold px-4 py-2 rounded-full">
+        <span>📄</span> Read the full lesson content below
+      </div>
+    </div>
+  );
 }

@@ -152,44 +152,86 @@ export class NotificationsService {
     paidAt: Date;
     items: { courseTitle: string; unitPrice: number }[];
   }) {
-    const subject = `Welcome to Clinical Research Nexus — Payment Confirmed #${data.paymentId.slice(-8).toUpperCase()}`;
+    const subject = `Welcome to Clinical Research Nexus — Your Account & Payment Confirmation #${data.paymentId.slice(-8).toUpperCase()}`;
     const accessUrl = data.magicLoginUrl || (this.frontendUrl + '/login');
+    const loginUrl = this.frontendUrl + '/login';
+    const changePasswordUrl = this.frontendUrl + '/dashboard';
     const rows = data.items.map(i =>
-      `<tr><td style="padding:10px 0;border-bottom:1px solid #eee">${i.courseTitle}</td>
-       <td style="padding:10px 0;border-bottom:1px solid #eee;text-align:right">${data.currency} ${i.unitPrice.toFixed(2)}</td></tr>`
+      `<tr>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;color:#333">${i.courseTitle}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #eee;font-size:14px;color:#333;text-align:right;font-weight:bold">${data.currency} ${i.unitPrice.toFixed(2)}</td>
+      </tr>`
     ).join('');
 
     const html = this.baseTemplate(`
-      <h1 style="color:#0d2233;margin:0 0 4px">Welcome &amp; Payment Confirmed ✓</h1>
+      <!-- Header greeting -->
+      <h1 style="color:#0d2233;margin:0 0 4px;font-size:22px">Welcome, ${data.firstName}! 🎓</h1>
       <p style="color:#888;font-size:13px;margin:0 0 24px">
-        Receipt #${data.paymentId.slice(-8).toUpperCase()} · ${new Date(data.paidAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+        Payment Confirmed · Receipt #${data.paymentId.slice(-8).toUpperCase()} · ${new Date(data.paidAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
       </p>
-      <p style="color:#555;font-size:15px;margin:0 0 20px">
-        Hi <strong>${data.firstName}</strong>, your payment is confirmed and your account is ready.
+
+      <p style="color:#444;font-size:15px;line-height:1.6;margin:0 0 24px">
+        Your payment has been confirmed and we have created your Clinical Research Nexus account automatically.
+        You now have full access to your enrolled course(s). Use the login credentials below to access your learning dashboard at any time.
       </p>
-      <table style="width:100%;border-collapse:collapse;margin:0 0 20px">
-        <thead><tr>
-          <th style="text-align:left;padding:8px 0;border-bottom:2px solid #0d2233;color:#0d2233;font-size:13px">Course</th>
-          <th style="text-align:right;padding:8px 0;border-bottom:2px solid #0d2233;color:#0d2233;font-size:13px">Amount</th>
+
+      <!-- Payment receipt table -->
+      <p style="font-size:13px;font-weight:bold;color:#0d2233;text-transform:uppercase;letter-spacing:1px;margin:0 0 8px">Payment Receipt</p>
+      <table style="width:100%;border-collapse:collapse;margin:0 0 24px;background:#fafafa;border-radius:8px;overflow:hidden;border:1px solid #eee">
+        <thead><tr style="background:#0d2233">
+          <th style="text-align:left;padding:10px 14px;color:#fff;font-size:12px;text-transform:uppercase;letter-spacing:1px">Course</th>
+          <th style="text-align:right;padding:10px 14px;color:#fff;font-size:12px;text-transform:uppercase;letter-spacing:1px">Amount</th>
         </tr></thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr>
-          <td style="padding:12px 0 0;font-weight:bold;color:#0d2233;font-size:16px">Total Paid</td>
-          <td style="padding:12px 0 0;font-weight:bold;color:#0d2233;font-size:16px;text-align:right">${data.currency} ${data.totalAmount.toFixed(2)}</td>
+        <tfoot><tr style="background:#f0f0f0">
+          <td style="padding:12px 14px;font-weight:bold;color:#0d2233;font-size:15px">Total Paid</td>
+          <td style="padding:12px 14px;font-weight:bold;color:#2d9e5f;font-size:17px;text-align:right">${data.currency} ${data.totalAmount.toFixed(2)}</td>
         </tr></tfoot>
       </table>
-      <div style="background:#f0f9ff;border:1px solid #c9a84c;padding:16px 20px;border-radius:8px;margin:0 0 20px">
-        <p style="margin:0 0 6px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px">Your Login Credentials</p>
-        <p style="margin:0 0 4px;font-size:14px;color:#333"><strong>Email:</strong> ${data.email}</p>
-        <p style="margin:0;font-size:14px;color:#333">
-          <strong>Temporary Password:</strong>
-          <span style="font-family:monospace;background:#eee;padding:2px 8px;border-radius:4px;font-size:15px;margin-left:8px">${data.temporaryPassword}</span>
+
+      <!-- Credentials box — most important section -->
+      <div style="background:#fffbeb;border:2px solid #c9a84c;border-radius:10px;padding:20px 24px;margin:0 0 24px">
+        <p style="margin:0 0 12px;font-size:11px;font-weight:bold;color:#92691a;text-transform:uppercase;letter-spacing:1.5px">🔑 Your Login Credentials</p>
+        <table style="width:100%;border-collapse:collapse">
+          <tr>
+            <td style="padding:6px 0;font-size:14px;color:#555;width:140px">Username / Email:</td>
+            <td style="padding:6px 0;font-size:14px;color:#0d2233;font-weight:bold;font-family:monospace">${data.email}</td>
+          </tr>
+          <tr>
+            <td style="padding:6px 0;font-size:14px;color:#555">Temporary Password:</td>
+            <td style="padding:6px 0">
+              <span style="display:inline-block;font-family:monospace;font-size:16px;font-weight:bold;background:#fff;border:1px solid #c9a84c;padding:4px 12px;border-radius:5px;color:#0d2233;letter-spacing:2px">${data.temporaryPassword}</span>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:14px 0 0;font-size:13px;color:#92691a;line-height:1.5">
+          💡 <strong>This is a temporary password.</strong> Once logged in, we recommend changing it to something memorable.
+          Go to <strong>Dashboard → Profile Settings</strong> to update your password at any time.
         </p>
       </div>
+
+      <!-- Primary CTA -->
       ${this.cta('Access My Courses Now →', accessUrl)}
-      ${data.magicLoginUrl ? '<p style="color:#888;font-size:12px;margin:10px 0 0">☝️ One-time link · valid 48 hours</p>' : ''}
-      <p style="color:#888;font-size:13px;margin:20px 0 0">
-        Questions? <a href="mailto:support@clinicalresearchnexus.com" style="color:#c9a84c">support@clinicalresearchnexus.com</a>
+      ${data.magicLoginUrl
+        ? `<p style="color:#888;font-size:12px;margin:6px 0 20px">☝️ The button above is a one-time magic link valid for 48 hours — it logs you in automatically without a password.</p>
+           <p style="color:#555;font-size:13px;margin:0 0 20px">After the magic link expires, log in at any time at <a href="${loginUrl}" style="color:#c9a84c;font-weight:bold">${loginUrl}</a> using the credentials above.</p>`
+        : `<p style="color:#555;font-size:13px;margin:8px 0 20px">Or log in at any time at <a href="${loginUrl}" style="color:#c9a84c;font-weight:bold">${loginUrl}</a></p>`
+      }
+
+      <!-- What's included -->
+      <div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:16px 20px;margin:0 0 20px">
+        <p style="margin:0 0 10px;font-size:12px;font-weight:bold;color:#15803d;text-transform:uppercase;letter-spacing:1px">✓ What's Included with Your Enrolment</p>
+        <ul style="margin:0;padding:0 0 0 18px;color:#444;font-size:13px;line-height:2">
+          <li>Lifetime access to all course content and future updates</li>
+          <li>Certificate of completion upon passing the final assessment</li>
+          <li>Downloadable resources, templates and reference guides</li>
+          <li>5-day money-back guarantee — no questions asked</li>
+        </ul>
+      </div>
+
+      <!-- Support -->
+      <p style="color:#888;font-size:13px;margin:0">
+        Need help? Contact us at <a href="mailto:support@clinicalresearchnexus.com" style="color:#c9a84c;font-weight:bold">support@clinicalresearchnexus.com</a> — we typically respond within 24 hours.
       </p>
     `);
     return this.send(data.email, subject, html);

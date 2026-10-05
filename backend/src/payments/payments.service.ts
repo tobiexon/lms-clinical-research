@@ -428,9 +428,23 @@ export class PaymentsService {
   }
 
   private generatePassword(): string {
-    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-    return Array.from({ length: 8 }, () =>
-      chars[Math.floor(Math.random() * chars.length)],
-    ).join('');
+    // 12 characters — avoids confusing chars (0/O, 1/l/I)
+    // Guarantees at least 1 uppercase, 1 lowercase, 1 digit, 1 special
+    const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+    const lower = 'abcdefghjkmnpqrstuvwxyz';
+    const digits = '23456789';
+    const special = '@#$!';
+    const all = upper + lower + digits + special;
+
+    const pick = (set: string) => set[Math.floor(Math.random() * set.length)];
+
+    // Guarantee one of each type, then fill remaining 8 chars randomly
+    const required = [pick(upper), pick(upper), pick(lower), pick(lower), pick(digits), pick(digits), pick(special)];
+    const rest = Array.from({ length: 5 }, () => pick(all));
+
+    // Shuffle all together
+    return [...required, ...rest]
+      .sort(() => Math.random() - 0.5)
+      .join('');
   }
 }

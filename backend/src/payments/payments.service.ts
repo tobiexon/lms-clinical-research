@@ -51,9 +51,16 @@ export class PaymentsService {
     const intent = await this.stripe.paymentIntents.create({
       amount: totalPence,
       currency: 'gbp',
-      // Explicitly use card only — avoids Stripe Link authentication modal
+      // Card only — explicitly excludes Stripe Link and all wallet/saved-card flows
       payment_method_types: ['card'],
       receipt_email: dto.email,
+      // Disable Link by not allowing automatic payment methods
+      // and setting payment_method_options to block Link
+      payment_method_options: {
+        card: {
+          request_three_d_secure: 'automatic',
+        },
+      },
       metadata: {
         courseIds: dto.items.map((i) => i.courseId).join(','),
         courseTitles: dto.items.map((i) => i.courseTitle).join(' | ').slice(0, 500),

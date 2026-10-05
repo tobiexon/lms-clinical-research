@@ -350,6 +350,8 @@ export default function CheckoutPage() {
                     },
                   },
                   loader: 'always',
+                  // Disable Stripe Link (saved payment methods) entirely
+                  link: { display: 'never' } as any,
                 }}
               >
                 <CheckoutForm form={form} items={items} total={total()} onSuccess={handleSuccess} />

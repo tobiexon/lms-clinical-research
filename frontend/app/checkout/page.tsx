@@ -9,7 +9,9 @@ import Cookies from 'js-cookie';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
-  PaymentElement,
+  CardNumberElement,
+  CardExpiryElement,
+  CardCvcElement,
   useStripe,
   useElements,
 } from '@stripe/react-stripe-js';
@@ -18,15 +20,29 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
 );
 
+// Shared Stripe element styling
+const CARD_STYLE = {
+  style: {
+    base: {
+      fontSize: '15px',
+      color: '#111827',
+      fontFamily: 'inherit',
+      '::placeholder': { color: '#9ca3af' },
+    },
+    invalid: { color: '#dc2626' },
+  },
+};
+
 // ─── Inner checkout form ────────────────────────────────────────────────────
 interface CheckoutFormProps {
   form: { firstName: string; lastName: string; email: string };
   items: CartItem[];
   total: number;
+  clientSecret: string;
   onSuccess: (accessToken: string, refreshToken: string) => void;
 }
 
-function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
+function CheckoutForm({ form, items, total, clientSecret, onSuccess }: CheckoutFormProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -40,26 +56,36 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
     setErrorMsg(null);
 
     try {
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements,
-        redirect: 'if_required',
-        confirmParams: {
-          payment_method_data: {
-            billing_details: {
-              name: `${form.firstName} ${form.lastName}`,
-              email: form.email,
-            },
-          },
+      const cardNumber = elements.getElement(CardNumberElement);
+      if (!cardNumber) throw new Error('Card element not found');
+
+      // Create payment method from the card fields
+      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardNumber,
+        billing_details: {
+          name: `${form.firstName} ${form.lastName}`,
+          email: form.email,
         },
       });
 
-      if (error) {
-        setErrorMsg(error.message ?? 'Payment failed. Please try again.');
+      if (pmError) {
+        setErrorMsg(pmError.message ?? 'Card validation failed. Please check your details.');
+        return;
+      }
+
+      // Confirm the PaymentIntent with the created payment method
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        { payment_method: paymentMethod!.id },
+      );
+
+      if (confirmError) {
+        setErrorMsg(confirmError.message ?? 'Payment failed. Please try again.');
         return;
       }
 
       if (paymentIntent?.status === 'succeeded') {
-        // Backend enrols user and returns JWT tokens for auto-login
         const { data } = await paymentsApi.processPayment({
           firstName: form.firstName,
           lastName: form.lastName,
@@ -74,7 +100,6 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
           })),
         });
 
-        // Auto-login — store tokens if returned
         if (data.accessToken && data.refreshToken) {
           onSuccess(data.accessToken, data.refreshToken);
         } else {
@@ -92,7 +117,7 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
   return (
     <form onSubmit={handlePay} className="space-y-5">
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-5">
           <h2 className="font-bold text-gray-900 text-lg">Payment Details</h2>
           <div className="flex gap-1.5 items-center text-gray-400">
             <span className="border border-gray-200 rounded px-2 py-0.5 text-xs font-bold">VISA</span>
@@ -102,29 +127,31 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
           </div>
         </div>
 
-        <PaymentElement
-          options={{
-            layout: {
-              type: 'tabs',
-              defaultCollapsed: false,
-            },
-            fields: {
-              billingDetails: {
-                email: 'never',
-                name: 'never',
-              },
-            },
-            wallets: {
-              applePay: 'never',
-              googlePay: 'never',
-            },
-            terms: {
-              card: 'never',
-            },
-          }}
-        />
+        {/* Card Number */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Card Number</label>
+          <div className="border border-gray-300 rounded-lg px-3 py-3 focus-within:ring-2 focus-within:ring-[#c9a84c] focus-within:border-transparent bg-white">
+            <CardNumberElement options={CARD_STYLE} />
+          </div>
+        </div>
 
-        <div className="flex items-center gap-2 mt-4 text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
+        {/* Expiry + CVC side by side */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Expiry Date</label>
+            <div className="border border-gray-300 rounded-lg px-3 py-3 focus-within:ring-2 focus-within:ring-[#c9a84c] focus-within:border-transparent bg-white">
+              <CardExpiryElement options={CARD_STYLE} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Security Code (CVC)</label>
+            <div className="border border-gray-300 rounded-lg px-3 py-3 focus-within:ring-2 focus-within:ring-[#c9a84c] focus-within:border-transparent bg-white">
+              <CardCvcElement options={CARD_STYLE} />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 mt-2 text-xs text-gray-400 bg-gray-50 rounded-lg p-3">
           <svg className="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
           </svg>
@@ -349,12 +376,9 @@ export default function CheckoutPage() {
                       fontFamily: 'inherit',
                     },
                   },
-                  loader: 'always',
-                  // Disable Stripe Link (saved payment methods) entirely
-                  link: { display: 'never' } as any,
                 }}
               >
-                <CheckoutForm form={form} items={items} total={total()} onSuccess={handleSuccess} />
+                <CheckoutForm form={form} items={items} total={total()} clientSecret={clientSecret} onSuccess={handleSuccess} />
               </Elements>
             )}
           </div>

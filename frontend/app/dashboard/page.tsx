@@ -15,10 +15,18 @@ interface User {
 
 interface Enrollment {
   id: string;
-  csCourseUid: string;
-  csCourseTitleCache: string;
+  courseId: string;
   status: string;
   enrolledAt: string;
+  progressPercentage: number;
+  course: {
+    title: string;
+    slug: string;
+    subtitle?: string;
+    difficultyLevel?: string;
+    durationHours?: number;
+    category?: { name: string };
+  };
   progress: { isCompleted: boolean }[];
 }
 
@@ -38,7 +46,6 @@ export default function DashboardPage() {
         setUser(userRes.data);
         setEnrollments(enrollRes.data);
       } catch {
-        // Not authenticated — redirect to login
         router.push('/login?redirect=/dashboard');
       } finally {
         setLoading(false);
@@ -57,6 +64,9 @@ export default function DashboardPage() {
 
   if (!user) return null;
 
+  const completedCount = enrollments.filter((e) => e.status === 'COMPLETED').length;
+  const activeCount = enrollments.filter((e) => e.status === 'ACTIVE').length;
+
   return (
     <main className="max-w-5xl mx-auto px-4 py-10">
       <div className="mb-8">
@@ -74,15 +84,11 @@ export default function DashboardPage() {
         </div>
         <div className="card p-5">
           <p className="text-sm text-gray-500">Completed</p>
-          <p className="text-3xl font-bold text-green-600 mt-1">
-            {enrollments.filter((e) => e.status === 'COMPLETED').length}
-          </p>
+          <p className="text-3xl font-bold text-green-600 mt-1">{completedCount}</p>
         </div>
         <div className="card p-5">
           <p className="text-sm text-gray-500">In Progress</p>
-          <p className="text-3xl font-bold text-amber-600 mt-1">
-            {enrollments.filter((e) => e.status === 'ACTIVE').length}
-          </p>
+          <p className="text-3xl font-bold text-amber-600 mt-1">{activeCount}</p>
         </div>
       </div>
 
@@ -105,40 +111,75 @@ export default function DashboardPage() {
         ) : (
           <div className="space-y-3">
             {enrollments.map((enrollment) => {
-              const total = enrollment.progress.length;
-              const completed = enrollment.progress.filter((p) => p.isCompleted).length;
-              const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+              const total = enrollment.progress?.length ?? 0;
+              const completed = enrollment.progress?.filter((p) => p.isCompleted).length ?? 0;
+              const percentage = enrollment.progressPercentage
+                ?? (total > 0 ? Math.round((completed / total) * 100) : 0);
+
+              const isCompleted = enrollment.status === 'COMPLETED';
+              const courseTitle = enrollment.course?.title ?? 'Course';
+              const courseSubtitle = enrollment.course?.subtitle;
+              const categoryName = enrollment.course?.category?.name;
 
               return (
-                <div key={enrollment.id} className="card p-5 flex items-center gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">
-                      {enrollment.csCourseTitleCache}
-                    </h3>
-                    <div className="flex items-center gap-3 mt-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-1.5">
-                        <div
-                          className="bg-primary-600 h-1.5 rounded-full transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500 shrink-0">{percentage}%</span>
+                <div key={enrollment.id} className="card p-5">
+                  <div className="flex items-start gap-4">
+                    {/* Course colour badge */}
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0d2233] to-[#1a4a6e] flex items-center justify-center shrink-0">
+                      <span className="text-cyan-400 text-xs font-extrabold">
+                        {courseTitle.charAt(0)}
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span
-                      className={`badge text-xs ${
-                        enrollment.status === 'COMPLETED' ? 'badge-green' : 'badge-blue'
-                      }`}
-                    >
-                      {enrollment.status.toLowerCase()}
-                    </span>
-                    <Link
-                      href={`/learn/${enrollment.csCourseUid}`}
-                      className="btn-primary text-sm py-1.5 px-4"
-                    >
-                      {enrollment.status === 'COMPLETED' ? 'Review' : 'Continue'}
-                    </Link>
+
+                    {/* Course info */}
+                    <div className="flex-1 min-w-0">
+                      {/* Category label */}
+                      {categoryName && (
+                        <p className="text-[11px] font-semibold text-[#c9a84c] uppercase tracking-widest mb-0.5">
+                          {categoryName}
+                        </p>
+                      )}
+
+                      {/* Course title — the key addition */}
+                      <h3 className="font-bold text-gray-900 text-base leading-snug truncate">
+                        {courseTitle}
+                      </h3>
+
+                      {/* Subtitle */}
+                      {courseSubtitle && (
+                        <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+                          {courseSubtitle}
+                        </p>
+                      )}
+
+                      {/* Progress bar */}
+                      <div className="flex items-center gap-3 mt-3">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all ${
+                              isCompleted ? 'bg-green-500' : 'bg-[#0d2233]'
+                            }`}
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500 shrink-0 w-8 text-right">
+                          {percentage}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className={`badge text-xs ${isCompleted ? 'badge-green' : 'badge-blue'}`}>
+                        {enrollment.status.toLowerCase()}
+                      </span>
+                      <Link
+                        href={`/learn/${enrollment.courseId}`}
+                        className="bg-[#0d2233] hover:bg-[#1a3a5c] text-white text-sm font-bold px-5 py-2 rounded-lg transition-colors"
+                      >
+                        {isCompleted ? 'Review' : 'Continue'}
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );

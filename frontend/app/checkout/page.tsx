@@ -105,9 +105,8 @@ function CheckoutForm({ form, items, total, onSuccess }: CheckoutFormProps) {
         <PaymentElement
           options={{
             layout: {
-              type: 'accordion',
+              type: 'tabs',
               defaultCollapsed: false,
-              spacedAccordionItems: false,
             },
             fields: {
               billingDetails: {

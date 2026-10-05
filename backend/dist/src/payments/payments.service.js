@@ -331,8 +331,17 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         return magic.token;
     }
     generatePassword() {
-        const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-        return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        const upper = 'ABCDEFGHJKMNPQRSTUVWXYZ';
+        const lower = 'abcdefghjkmnpqrstuvwxyz';
+        const digits = '23456789';
+        const special = '@#$!';
+        const all = upper + lower + digits + special;
+        const pick = (set) => set[Math.floor(Math.random() * set.length)];
+        const required = [pick(upper), pick(upper), pick(lower), pick(lower), pick(digits), pick(digits), pick(special)];
+        const rest = Array.from({ length: 5 }, () => pick(all));
+        return [...required, ...rest]
+            .sort(() => Math.random() - 0.5)
+            .join('');
     }
 };
 exports.PaymentsService = PaymentsService;

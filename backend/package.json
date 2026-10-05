@@ -14,7 +14,10 @@
     "db:push": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/prisma/build/index.js db push',{timeout:30000,env:{...process.env}}).toString())\"",
     "db:generate": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/prisma/build/index.js generate',{timeout:30000,env:{...process.env}}).toString())\"",
     "db:studio": "node node_modules/prisma/build/index.js studio",
-    "db:seed": "node -e \"const {execSync}=require('child_process');console.log(execSync('node node_modules/ts-node/dist/bin.js prisma/seed.ts',{timeout:30000,env:{...process.env}}).toString())\""
+    "db:seed": "node prisma/seed.js",
+    "db:seed:courses": "node prisma/seed-courses.js",
+    "db:seed:course-01": "node prisma/seed-course-01-uk-startup-to-closure.js",
+    "db:seed:all": "node prisma/seed.js && node prisma/seed-courses.js && node prisma/seed-course-01-uk-startup-to-closure.js"
   },
   "dependencies": {
     "@nestjs/cli": "^10.3.0",

@@ -298,16 +298,20 @@ export default function LearnPage() {
               {/* ── TEXT ── */}
               {activeLesson.lessonType === 'TEXT' && (
                 <div className="bg-white rounded-xl p-8 mb-6">
-                  <div className="prose max-w-none text-gray-700">
-                    {activeLesson.content
-                      ? <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{
-                          typeof activeLesson.content === 'string'
+                  {activeLesson.content
+                    ? (
+                      <div
+                        className="lesson-content"
+                        dangerouslySetInnerHTML={{
+                          __html: typeof activeLesson.content === 'string'
                             ? activeLesson.content
-                            : JSON.stringify(activeLesson.content)
-                        }</p>
-                      : <p className="text-gray-400 italic">Lesson content will be added by your instructor.</p>
-                    }
-                  </div>
+                            : (activeLesson.content as any)?.html
+                              ?? '<p class="text-gray-400 italic">Content is being prepared by your instructor.</p>',
+                        }}
+                      />
+                    )
+                    : <p className="text-gray-400 italic">Lesson content will be added by your instructor.</p>
+                  }
                 </div>
               )}
 

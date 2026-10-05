@@ -15,9 +15,9 @@ export declare class AuthController {
             email: string;
             firstName: string;
             lastName: string;
-            createdAt: Date;
             role: import(".prisma/client").$Enums.Role;
             country: string;
+            createdAt: Date;
         };
     }>;
     login(dto: LoginDto): Promise<{

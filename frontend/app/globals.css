@@ -34,3 +34,238 @@
   .badge-green { @apply badge bg-green-100 text-green-800; }
   .badge-amber { @apply badge bg-amber-100 text-amber-800; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   LESSON CONTENT RENDERER — .lesson-content
+   Renders HTML stored in lesson.content field (from seed).
+   Used in: frontend/app/learn/[courseId]/page.tsx
+   ───────────────────────────────────────────────────────────── */
+.lesson-content {
+  color: #1f2937;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  max-width: none;
+}
+
+/* Headings */
+.lesson-content h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0d2233;
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.lesson-content h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0d2233;
+  margin: 2rem 0 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.lesson-content h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e3a4f;
+  margin: 1.5rem 0 0.5rem;
+}
+.lesson-content h4 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #374151;
+  margin: 1.25rem 0 0.375rem;
+}
+
+/* Paragraphs */
+.lesson-content p {
+  margin: 0 0 1rem;
+}
+.lesson-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Bold & italic */
+.lesson-content strong, .lesson-content b {
+  font-weight: 700;
+  color: #111827;
+}
+.lesson-content em, .lesson-content i {
+  font-style: italic;
+}
+
+/* Lists */
+.lesson-content ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 1.25rem;
+}
+.lesson-content ul li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.lesson-content ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #c9a84c;
+}
+.lesson-content ol {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 1.25rem;
+  counter-reset: lesson-counter;
+}
+.lesson-content ol li {
+  position: relative;
+  padding-left: 2rem;
+  margin-bottom: 0.5rem;
+  counter-increment: lesson-counter;
+}
+.lesson-content ol li::before {
+  content: counter(lesson-counter);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: #0d2233;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1;
+}
+
+/* Callout / blockquote */
+.lesson-content blockquote {
+  border-left: 4px solid #c9a84c;
+  background: #fffbeb;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+  color: #78350f;
+  font-size: 0.9rem;
+}
+.lesson-content blockquote p {
+  margin: 0;
+}
+
+/* Horizontal rule */
+.lesson-content hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 1.75rem 0;
+}
+
+/* Tables */
+.lesson-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0 1.5rem;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px #e5e7eb;
+}
+.lesson-content table th {
+  background: #0d2233;
+  color: white;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.lesson-content table td {
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #374151;
+  vertical-align: top;
+}
+.lesson-content table tr:last-child td {
+  border-bottom: none;
+}
+.lesson-content table tr:nth-child(even) td {
+  background: #f9fafb;
+}
+.lesson-content table tr:hover td {
+  background: #f0f9ff;
+}
+
+/* Inline code */
+.lesson-content code {
+  background: #f3f4f6;
+  color: #0d2233;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: 'Courier New', monospace;
+}
+
+/* Key term highlight spans */
+.lesson-content .key-term {
+  background: #fef9c3;
+  border-bottom: 2px solid #c9a84c;
+  padding: 0 0.125rem;
+  font-weight: 600;
+}
+
+/* Info box (div.info-box) */
+.lesson-content .info-box {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+}
+.lesson-content .info-box-title {
+  font-weight: 700;
+  color: #1e40af;
+  margin-bottom: 0.375rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Warning box */
+.lesson-content .warning-box {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+}
+.lesson-content .warning-box p {
+  color: #9a3412;
+  margin: 0;
+}
+
+/* Key points box */
+.lesson-content .key-points {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+}
+.lesson-content .key-points-title {
+  font-weight: 700;
+  color: #15803d;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

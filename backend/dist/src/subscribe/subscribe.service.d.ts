@@ -15,10 +15,10 @@ export declare class SubscribeService {
             id: string;
             email: string;
             isActive: boolean;
-            subscribedAt: Date;
-            unsubscribedAt: Date | null;
             ipAddress: string | null;
             source: string | null;
+            subscribedAt: Date;
+            unsubscribedAt: Date | null;
         }[];
         total: number;
     }>;

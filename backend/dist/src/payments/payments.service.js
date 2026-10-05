@@ -50,6 +50,11 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             currency: 'gbp',
             payment_method_types: ['card'],
             receipt_email: dto.email,
+            payment_method_options: {
+                card: {
+                    request_three_d_secure: 'automatic',
+                },
+            },
             metadata: {
                 courseIds: dto.items.map((i) => i.courseId).join(','),
                 courseTitles: dto.items.map((i) => i.courseTitle).join(' | ').slice(0, 500),

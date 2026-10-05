@@ -13,26 +13,22 @@ const COURSE_SLUG = 'clinical-trial-uk-startup-to-closure';
 
 // ─────────────────────────────────────────────────────────
 // VIDEO URLS
-// Currently set to null — shows "Video Coming Soon" placeholder.
-// Replace each null with your actual video URL when ready.
-// Supported formats (update videoUrl in any lesson):
-//   YouTube:      https://www.youtube.com/watch?v=VIDEO_ID
-//   Vimeo:        https://vimeo.com/VIDEO_ID
-//   Bunny Stream: https://iframe.mediadelivery.net/embed/LIBRARY_ID/VIDEO_ID
-//   Wistia:       https://fast.wistia.com/medias/VIDEO_ID
-//   Loom:         https://www.loom.com/share/VIDEO_ID
-//   Google Drive: https://drive.google.com/file/d/FILE_ID/view
-//   Direct MP4:   https://your-cdn.com/videos/lesson-01.mp4
+// aGYMB4TkJYM = "Implementing the new UK Clinical Trials Regulations Webinar"
+// Source: MHRA official YouTube channel (MHRAgovuk) — verified live.
+// This single video is used across all video lessons as a placeholder
+// until your own recordings are ready. Replace per-lesson as needed.
 // ─────────────────────────────────────────────────────────
+const COURSE_VIDEO = 'https://www.youtube.com/watch?v=aGYMB4TkJYM';
+
 const VIDEOS = {
-  drugLifecycle:  null,   // Module 1 Lesson 1 — replace with your recording
-  ukRegulatory:   null,   // Module 1 Lesson 3 — replace with your recording
-  feasibilitySsv: null,   // Module 2 Lesson 1 — replace with your recording
-  sivDocs:        null,   // Module 3 Lesson 1 — replace with your recording
-  monitoring:     null,   // Module 4 Lesson 1 — replace with your recording
-  adverseEvents:  null,   // Module 4 Lesson 2 — replace with your recording
-  dataQuality:    null,   // Module 5 Lesson 1 — replace with your recording
-  closure:        null,   // Module 6 Lesson 1 — replace with your recording
+  drugLifecycle:  COURSE_VIDEO,
+  ukRegulatory:   COURSE_VIDEO,
+  feasibilitySsv: COURSE_VIDEO,
+  sivDocs:        COURSE_VIDEO,
+  monitoring:     COURSE_VIDEO,
+  adverseEvents:  COURSE_VIDEO,
+  dataQuality:    COURSE_VIDEO,
+  closure:        COURSE_VIDEO,
 };
 
 // ─────────────────────────────────────────────────────────

@@ -164,7 +164,7 @@ export default function LearnPage() {
 
   return (
     // Full-screen layout — no navbar/footer
-    <div className="fixed inset-0 flex flex-col bg-gray-900 overflow-hidden" style={{ zIndex: 60 }}>
+    <div className="fixed inset-0 flex flex-col bg-gray-100 overflow-hidden" style={{ zIndex: 60 }}>
 
       {/* ── Top bar ── */}
       <header className="bg-[#0d2233] border-b border-white/10 px-4 py-2.5 flex items-center gap-3 shrink-0 h-12">
@@ -182,13 +182,14 @@ export default function LearnPage() {
 
         {/* Progress */}
         <div className="hidden sm:flex items-center gap-2 shrink-0">
-          <div className="w-24 bg-white/20 rounded-full h-1.5">
-            <div className="bg-[#c9a84c] h-1.5 rounded-full transition-all" style={{ width: `${progressPct}%` }}/>
-          </div>
           <span className="text-cyan-300 text-xs">{progressPct}%</span>
+          <div className="w-28 bg-white/20 rounded-full h-2">
+            <div className="bg-[#c9a84c] h-2 rounded-full transition-all" style={{ width: `${progressPct}%` }}/>
+          </div>
+          <span className="text-white/50 text-xs">{completedLessons.length}/{totalLessons}</span>
         </div>
 
-        <Link href="/dashboard" className="text-xs text-cyan-400 hover:text-white shrink-0 transition-colors">
+        <Link href="/dashboard" className="text-xs text-cyan-400 hover:text-white shrink-0 transition-colors ml-2">
           ← Dashboard
         </Link>
       </header>
@@ -198,28 +199,29 @@ export default function LearnPage() {
 
         {/* ── Sidebar ── */}
         {sidebarOpen && (
-          <aside className="w-64 xl:w-72 bg-[#111827] border-r border-white/10 flex flex-col overflow-hidden shrink-0">
-            {/* Progress */}
-            <div className="px-4 py-3 bg-[#0d2233] border-b border-white/10 shrink-0">
-              <div className="flex justify-between text-xs text-cyan-400 mb-1.5">
-                <span>Course Progress</span>
+          <aside className="w-64 xl:w-72 bg-white border-r border-gray-200 flex flex-col overflow-hidden shrink-0 shadow-md">
+            {/* Progress header */}
+            <div className="px-4 py-3 bg-[#0d2233] shrink-0">
+              <div className="flex justify-between text-xs text-cyan-300 mb-1.5">
+                <span className="font-semibold">Course Progress</span>
                 <span>{completedLessons.length}/{totalLessons} lessons</span>
               </div>
-              <div className="bg-white/20 rounded-full h-1.5">
-                <div className="bg-[#c9a84c] h-1.5 rounded-full transition-all" style={{ width: `${progressPct}%` }}/>
+              <div className="bg-white/20 rounded-full h-2">
+                <div className="bg-[#c9a84c] h-2 rounded-full transition-all" style={{ width: `${progressPct}%` }}/>
               </div>
+              <p className="text-white/50 text-[10px] mt-1">{progressPct}% complete</p>
             </div>
 
             {/* Module/lesson list */}
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-white">
               {course.modules?.sort((a, b) => a.order - b.order).map((module, mi) => (
                 <div key={module.id}>
                   {/* Module header */}
-                  <div className="px-4 py-2 bg-white/5 sticky top-0">
-                    <p className="text-[11px] font-bold text-white/60 uppercase tracking-wider">
+                  <div className="px-4 py-2.5 bg-gray-100 border-b border-gray-200 sticky top-0">
+                    <p className="text-[10px] font-bold text-[#0d2233]/50 uppercase tracking-widest">
                       Module {mi + 1}
                     </p>
-                    <p className="text-xs text-white/80 font-medium leading-snug">{module.title}</p>
+                    <p className="text-xs text-[#0d2233] font-semibold leading-snug mt-0.5">{module.title}</p>
                   </div>
                   {/* Lessons */}
                   {module.lessons.sort((a, b) => a.order - b.order).map((lesson) => {
@@ -227,20 +229,27 @@ export default function LearnPage() {
                     const active = activeLesson?.id === lesson.id;
                     return (
                       <button key={lesson.id} onClick={() => goToLesson(lesson)}
-                        className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-all border-l-2 ${
-                          active ? 'bg-[#c9a84c]/15 border-[#c9a84c]' : 'border-transparent hover:bg-white/5'
+                        className={`w-full text-left px-3 py-2.5 flex items-start gap-2.5 transition-all border-l-3 border-l-2 ${
+                          active
+                            ? 'bg-[#c9a84c]/10 border-l-[#c9a84c] border-l-2'
+                            : 'border-l-transparent hover:bg-gray-50 hover:border-l-gray-300'
                         }`}>
-                        <span className={`text-base shrink-0 mt-0.5 ${done ? 'text-green-400' : active ? 'text-[#c9a84c]' : 'text-white/25'}`}>
+                        <span className={`text-sm shrink-0 mt-0.5 ${done ? 'text-green-500' : active ? 'text-[#c9a84c]' : 'text-gray-300'}`}>
                           {done ? '✓' : lesson.lessonType === 'VIDEO' ? '▶' : '📝'}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs leading-snug ${active ? 'text-white font-medium' : done ? 'text-white/50 line-through' : 'text-white/70'}`}>
+                          <p className={`text-xs leading-snug ${
+                            active ? 'text-[#0d2233] font-semibold' :
+                            done ? 'text-gray-400 line-through' :
+                            'text-gray-700'
+                          }`}>
                             {lesson.title}
                           </p>
                           {lesson.videoDurationMinutes && (
-                            <p className="text-[10px] text-white/30 mt-0.5">{lesson.videoDurationMinutes} min</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">{lesson.videoDurationMinutes} min</p>
                           )}
                         </div>
+                        {done && <span className="text-[10px] text-green-500 shrink-0 mt-0.5">✓</span>}
                       </button>
                     );
                   })}
@@ -251,14 +260,14 @@ export default function LearnPage() {
         )}
 
         {/* ── Content area ── */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-gray-50">
           {activeLesson ? (
-            <div className="max-w-4xl mx-auto px-4 py-6">
+            <div className="max-w-4xl mx-auto px-6 py-7">
               {/* Breadcrumb */}
-              <p className="text-cyan-500 text-xs mb-2">
+              <p className="text-[#c9a84c] text-xs font-semibold uppercase tracking-widest mb-1">
                 {course.modules?.find(m => m.lessons.some(l => l.id === activeLesson.id))?.title}
               </p>
-              <h2 className="text-white text-2xl font-bold mb-6">{activeLesson.title}</h2>
+              <h2 className="text-[#0d2233] text-2xl font-extrabold mb-6">{activeLesson.title}</h2>
 
               {/* ── VIDEO ── */}
               {activeLesson.lessonType === 'VIDEO' && (
@@ -285,10 +294,11 @@ export default function LearnPage() {
                       )}
                     </div>
                   ) : (
-                    <div className="w-full bg-gray-800 rounded-xl flex items-center justify-center" style={{ paddingTop: '30%', position: 'relative' }}>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500">
+                    <div className="w-full bg-gray-200 rounded-xl border border-gray-300 flex items-center justify-center" style={{ paddingTop: '30%', position: 'relative' }}>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
                         <span className="text-4xl mb-2">🎬</span>
-                        <p className="text-sm">Video coming soon</p>
+                        <p className="text-sm font-medium">Video coming soon</p>
+                        <p className="text-xs mt-1">Your instructor is preparing this lesson</p>
                       </div>
                     </div>
                   )}
@@ -297,7 +307,7 @@ export default function LearnPage() {
 
               {/* ── TEXT ── */}
               {activeLesson.lessonType === 'TEXT' && (
-                <div className="bg-white rounded-xl p-8 mb-6">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 mb-6">
                   {activeLesson.content
                     ? (
                       <div
@@ -317,29 +327,29 @@ export default function LearnPage() {
 
               {/* ── PDF ── */}
               {activeLesson.lessonType === 'PDF' && (
-                <div className="bg-gray-800 rounded-xl p-8 text-center mb-6">
+                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center mb-6">
                   <div className="text-5xl mb-3">📄</div>
-                  <p className="text-white font-medium mb-4">{activeLesson.title}</p>
-                  <p className="text-gray-400 text-sm">PDF content will be available here.</p>
+                  <p className="text-gray-800 font-medium mb-4">{activeLesson.title}</p>
+                  <p className="text-gray-500 text-sm">PDF content will be available here.</p>
                 </div>
               )}
 
               {/* ── Completion + navigation ── */}
-              <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-6 border-t border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-5 border-t border-gray-200">
                 {/* Prev */}
                 <button onClick={() => prevLesson && goToLesson(prevLesson)} disabled={!prevLesson}
-                  className="flex items-center gap-2 text-cyan-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed text-sm transition-colors">
+                  className="flex items-center gap-2 text-[#0d2233] hover:text-[#c9a84c] disabled:opacity-30 disabled:cursor-not-allowed text-sm font-medium transition-colors">
                   ← Previous
                 </button>
 
                 {/* Mark complete */}
                 {completedLessons.includes(activeLesson.id) ? (
-                  <div className="flex items-center gap-2 text-green-400 font-semibold text-sm">
-                    <span className="text-lg">✓</span> Completed
+                  <div className="flex items-center gap-2 text-green-600 font-semibold text-sm bg-green-50 border border-green-200 px-5 py-2 rounded-lg">
+                    <span className="text-base">✓</span> Completed
                   </div>
                 ) : (
                   <button onClick={() => markComplete(activeLesson.id)}
-                    className="bg-[#c9a84c] hover:bg-[#b8973b] text-white font-bold px-8 py-2.5 rounded-lg text-sm transition-colors uppercase tracking-wide">
+                    className="bg-[#c9a84c] hover:bg-[#b8973b] text-white font-bold px-8 py-2.5 rounded-lg text-sm transition-colors uppercase tracking-wide shadow-sm">
                     Mark as Complete
                   </button>
                 )}
@@ -347,20 +357,20 @@ export default function LearnPage() {
                 {/* Next */}
                 {nextLesson ? (
                   <button onClick={() => goToLesson(nextLesson)}
-                    className="flex items-center gap-2 text-cyan-400 hover:text-white text-sm transition-colors">
+                    className="flex items-center gap-2 text-[#0d2233] hover:text-[#c9a84c] text-sm font-medium transition-colors">
                     Next →
                   </button>
                 ) : (
-                  <div className="text-green-400 text-sm font-medium">🎉 Course complete!</div>
+                  <div className="text-green-600 text-sm font-semibold">🎉 Course complete!</div>
                 )}
               </div>
 
               {/* Completion celebration */}
               {progressPct === 100 && (
-                <div className="mt-6 bg-green-900/30 border border-green-500/30 rounded-xl p-5 text-center">
+                <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-5 text-center">
                   <div className="text-4xl mb-2">🏅</div>
-                  <h3 className="text-green-300 font-bold text-lg mb-1">Course Completed!</h3>
-                  <p className="text-green-400/80 text-sm mb-4">Congratulations on finishing {course.title}</p>
+                  <h3 className="text-green-700 font-bold text-lg mb-1">Course Completed!</h3>
+                  <p className="text-green-600 text-sm mb-4">Congratulations on finishing {course.title}</p>
                   <Link href="/certificates"
                     className="inline-block bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-2 rounded-lg text-sm transition-colors">
                     View My Certificate
@@ -369,11 +379,11 @@ export default function LearnPage() {
               )}
             </div>
           ) : (
-            <div className="flex items-center justify-center h-full text-gray-500">
+            <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="text-5xl mb-3">📚</div>
-                <p className="text-lg">Select a lesson from the sidebar</p>
-                <p className="text-sm mt-1 text-gray-600">Your course content will appear here</p>
+                <p className="text-lg text-gray-700 font-semibold">Select a lesson to begin</p>
+                <p className="text-sm mt-1 text-gray-400">Choose any lesson from the sidebar on the left</p>
               </div>
             </div>
           )}

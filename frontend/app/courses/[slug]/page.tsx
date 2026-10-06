@@ -380,7 +380,7 @@ export default async function CourseDetailPage({ params }: { params: { slug: str
                       {faq.q}
                       <span className="text-[#c9a84c] text-lg shrink-0">+</span>
                     </summary>
-                    <div className="px-5 pb-4 pt-2 text-sm text-gray-600 leading-relaxed border-t border-gray-100 bg-gray-50">
+                    <div className="px-5 pb-4 pt-2 text-base text-gray-600 leading-relaxed border-t border-gray-100 bg-gray-50">
                       {faq.a}
                     </div>
                   </details>

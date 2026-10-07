@@ -240,4 +240,17 @@ export const adminApi = {
     api.get('/admin/users', { params }),
   updateUserRole: (id: string, role: string) => api.patch(`/admin/users/${id}/role`, { role }),
   toggleUserActive: (id: string) => api.patch(`/admin/users/${id}/toggle-active`),
+
+  // Payments
+  getPayments: (page = 1, limit = 30) =>
+    api.get('/admin/payments', { params: { page, limit } }),
+  getPaymentStats: () => api.get('/admin/payments/stats'),
+  getPayment: (id: string) => api.get(`/admin/payments/${id}`),
+  refundPayment: (id: string, notes?: string) =>
+    api.patch(`/admin/payments/${id}/refund`, { notes }),
+
+  // Payout settings (SUPER_ADMIN only)
+  getPayoutSettings: () => api.get('/admin/payout-settings'),
+  updatePayoutSettings: (data: any) => api.put('/admin/payout-settings', data),
+  getPayoutAuditLog: () => api.get('/admin/payout-settings/audit-log'),
 };

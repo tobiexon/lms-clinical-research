@@ -5,6 +5,7 @@ import { AdminInstructorsController } from './controllers/admin-instructors.cont
 import { AdminUsersController } from './controllers/admin-users.controller';
 import { AdminStatsController } from './controllers/admin-stats.controller';
 import { AdminPaymentsController } from './controllers/admin-payments.controller';
+import { AdminPayoutSettingsController } from './controllers/admin-payout-settings.controller';
 import { AdminCoursesService } from './services/admin-courses.service';
 import { AdminProgramsService } from './services/admin-programs.service';
 import { AdminInstructorsService } from './services/admin-instructors.service';
@@ -21,6 +22,7 @@ import { PaymentsModule } from '../payments/payments.module';
     AdminUsersController,
     AdminStatsController,
     AdminPaymentsController,
+    AdminPayoutSettingsController,
   ],
   providers: [
     AdminCoursesService,

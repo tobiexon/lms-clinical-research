@@ -494,6 +494,44 @@ model PasswordResetToken {
 }
 
 // ─────────────────────────────────────────
+// PAYOUT SETTINGS (SUPER_ADMIN only)
+// ─────────────────────────────────────────
+
+model PayoutSettings {
+  id                    String   @id @default(cuid())
+  // Stripe connected account / bank descriptor
+  stripeBankAccountLast4 String? // last 4 of linked bank account (display only)
+  stripeBankName         String? // e.g. "Barclays Business"
+  stripeAccountId        String? // Stripe account ID (acct_xxx) if using Connect
+  payoutSchedule         String  @default("automatic") // "automatic" | "manual"
+  payoutIntervalDays     Int     @default(7)   // payout frequency in days
+  minimumPayoutAmount    Decimal @default(0) @db.Decimal(10, 2)
+  currency               String  @default("GBP")
+  beneficiaryName        String? // "Clinical Research Nexus Ltd"
+  notes                  String? // internal admin notes
+  updatedAt              DateTime @updatedAt
+  updatedByAdminId       String?  // User.id of the SUPER_ADMIN who last changed it
+  updatedByAdminEmail    String?  // cached email for audit log
+
+  @@map("payout_settings")
+}
+
+// Immutable audit log of every payout settings change
+model PayoutSettingsAuditLog {
+  id            String   @id @default(cuid())
+  adminId       String
+  adminEmail    String
+  action        String   // "UPDATE_PAYOUT_SETTINGS"
+  fieldChanged  String   // e.g. "stripeBankAccountLast4"
+  oldValue      String?
+  newValue      String?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
+
+  @@map("payout_settings_audit_log")
+}
+
+// ─────────────────────────────────────────
 // NEWSLETTER SUBSCRIBERS
 // ─────────────────────────────────────────
 model NewsletterSubscriber {

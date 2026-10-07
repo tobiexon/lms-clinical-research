@@ -14,6 +14,7 @@ const admin_instructors_controller_1 = require("./controllers/admin-instructors.
 const admin_users_controller_1 = require("./controllers/admin-users.controller");
 const admin_stats_controller_1 = require("./controllers/admin-stats.controller");
 const admin_payments_controller_1 = require("./controllers/admin-payments.controller");
+const admin_payout_settings_controller_1 = require("./controllers/admin-payout-settings.controller");
 const admin_courses_service_1 = require("./services/admin-courses.service");
 const admin_programs_service_1 = require("./services/admin-programs.service");
 const admin_instructors_service_1 = require("./services/admin-instructors.service");
@@ -33,6 +34,7 @@ exports.AdminModule = AdminModule = __decorate([
             admin_users_controller_1.AdminUsersController,
             admin_stats_controller_1.AdminStatsController,
             admin_payments_controller_1.AdminPaymentsController,
+            admin_payout_settings_controller_1.AdminPayoutSettingsController,
         ],
         providers: [
             admin_courses_service_1.AdminCoursesService,

@@ -37,9 +37,14 @@ node prisma/seed-courses.js
 if ($LASTEXITCODE -ne 0) { Write-Host "❌ seed-courses.js failed"; exit 1 }
 
 Write-Host ""
-Write-Host "Step 3/3: Running Course 01 seed (full content)..."
+Write-Host "Step 3/4: Running Course 01 seed (UK Startup to Closure)..."
 node prisma/seed-course-01-uk-startup-to-closure.js
 if ($LASTEXITCODE -ne 0) { Write-Host "❌ Course 01 seed failed"; exit 1 }
+
+Write-Host ""
+Write-Host "Step 4/4: Running Course 03 seed (CRA Foundation)..."
+node prisma/seed-course-03-cra-foundation.js
+if ($LASTEXITCODE -ne 0) { Write-Host "❌ Course 03 seed failed"; exit 1 }
 
 Write-Host ""
 Write-Host "============================================================"

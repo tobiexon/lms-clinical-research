@@ -314,7 +314,7 @@ export default function LearnPage() {
 
             {/* ── AI Tutor sidebar button (only for CDM course) ────────────── */}
             {aiTutorEnabled && activeLesson && (
-              <div className="px-3 py-3 border-t border-gray-100 bg-white shrink-0">
+              <div className="px-3 pt-3 pb-5 border-t border-gray-100 bg-white shrink-0">
                 <button
                   onClick={handleTutorToggle}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-all ${
@@ -349,13 +349,23 @@ export default function LearnPage() {
                 </p>
               </div>
             )}
+
+            {/* ── Sidebar footer ───────────────────────────────────────────── */}
+            <div className="px-4 py-3 bg-[#0a1827] border-t border-white/5 shrink-0">
+              <p className="text-[9px] text-white/30 text-center leading-relaxed">
+                © {new Date().getFullYear()} Clinical Research Nexus
+              </p>
+              <p className="text-[9px] text-white/20 text-center mt-0.5">
+                All content is for educational purposes only
+              </p>
+            </div>
           </aside>
         )}
 
         {/* ── Content area ─────────────────────────────────────────────────── */}
-        <main className="flex-1 overflow-y-auto bg-gray-50">
+        <main className="flex-1 overflow-y-auto bg-gray-50 flex flex-col">
           {activeLesson ? (
-            <div className="max-w-4xl mx-auto px-6 py-7">
+            <div className="flex-1 max-w-4xl w-full mx-auto px-6 py-7 pb-20">
 
               {/* Breadcrumb */}
               <p className="text-[#c9a84c] text-xs font-semibold uppercase tracking-widest mb-1">
@@ -497,6 +507,20 @@ export default function LearnPage() {
               </div>
             </div>
           )}
+
+          {/* ── Content area footer ───────────────────────────────────────── */}
+          <footer className="shrink-0 bg-white border-t border-gray-200 px-6 py-3 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4 text-[10px] text-gray-400">
+              <Link href="/courses" className="hover:text-gray-600 transition-colors">All Courses</Link>
+              <span>·</span>
+              <Link href="/dashboard" className="hover:text-gray-600 transition-colors">Dashboard</Link>
+              <span>·</span>
+              <Link href="/contact" className="hover:text-gray-600 transition-colors">Support</Link>
+            </div>
+            <p className="text-[10px] text-gray-300 shrink-0">
+              © {new Date().getFullYear()} Clinical Research Nexus · All rights reserved
+            </p>
+          </footer>
         </main>
       </div>
     </div>

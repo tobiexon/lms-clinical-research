@@ -8,8 +8,15 @@ export default function CartIcon() {
   const { items, removeItem, clearCart, total, count } = useCartStore();
   const [open, setOpen] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const itemCount = count();
+
+  // Wait for client mount before reading localStorage-backed store
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const itemCount = mounted ? count() : 0;
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -63,7 +70,7 @@ export default function CartIcon() {
             <span className="text-white font-semibold text-sm">
               Your Cart ({itemCount} {itemCount === 1 ? 'course' : 'courses'})
             </span>
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="text-[#c9a84c] text-sm font-bold">
                 £{total().toFixed(2)}
               </span>
@@ -71,7 +78,7 @@ export default function CartIcon() {
           </div>
 
           {/* Empty state */}
-          {items.length === 0 ? (
+          {!mounted || items.length === 0 ? (
             <div className="p-6 text-center text-gray-400">
               <div className="text-3xl mb-2">🛒</div>
               <p className="text-sm">Your cart is empty</p>

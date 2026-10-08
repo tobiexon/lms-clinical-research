@@ -16,9 +16,9 @@ export declare class SubscribeService {
             email: string;
             isActive: boolean;
             ipAddress: string | null;
+            source: string | null;
             subscribedAt: Date;
             unsubscribedAt: Date | null;
-            source: string | null;
         }[];
         total: number;
     }>;

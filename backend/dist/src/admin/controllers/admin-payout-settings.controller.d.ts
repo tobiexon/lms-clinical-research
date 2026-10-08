@@ -6,16 +6,16 @@ export declare class AdminPayoutSettingsController {
     constructor(prisma: PrismaService);
     getSettings(): Promise<{
         id: string;
+        updatedAt: Date;
+        currency: string;
+        notes: string | null;
         stripeBankAccountLast4: string | null;
         stripeBankName: string | null;
         stripeAccountId: string | null;
         payoutSchedule: string;
         payoutIntervalDays: number;
         minimumPayoutAmount: Decimal;
-        currency: string;
         beneficiaryName: string | null;
-        notes: string | null;
-        updatedAt: Date;
         updatedByAdminId: string | null;
         updatedByAdminEmail: string | null;
     } | {
@@ -34,27 +34,27 @@ export declare class AdminPayoutSettingsController {
     }>;
     getAuditLog(): Promise<{
         id: string;
+        createdAt: Date;
+        ipAddress: string | null;
         adminId: string;
         adminEmail: string;
         action: string;
         fieldChanged: string;
         oldValue: string | null;
         newValue: string | null;
-        ipAddress: string | null;
-        createdAt: Date;
     }[]>;
     updateSettings(dto: UpdatePayoutSettingsDto, req: any): Promise<{
         id: string;
+        updatedAt: Date;
+        currency: string;
+        notes: string | null;
         stripeBankAccountLast4: string | null;
         stripeBankName: string | null;
         stripeAccountId: string | null;
         payoutSchedule: string;
         payoutIntervalDays: number;
         minimumPayoutAmount: Decimal;
-        currency: string;
         beneficiaryName: string | null;
-        notes: string | null;
-        updatedAt: Date;
         updatedByAdminId: string | null;
         updatedByAdminEmail: string | null;
     }>;

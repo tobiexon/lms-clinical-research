@@ -17,6 +17,8 @@
     "db:seed": "node prisma/seed.js",
     "db:seed:courses": "node prisma/seed-courses.js",
     "db:seed:course-01": "node prisma/seed-course-01-uk-startup-to-closure.js",
+    "db:seed:course-03": "node prisma/seed-course-03-cra-foundation.js",
+    "db:seed:course-04": "node prisma/seed-course-04-intro-pharmacovigilance.js",
     "db:seed:all": "node prisma/seed.js && node prisma/seed-courses.js && node prisma/seed-course-01-uk-startup-to-closure.js"
   },
   "dependencies": {

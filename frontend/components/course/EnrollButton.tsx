@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/cart-store';
 
@@ -28,15 +28,20 @@ export default function EnrollButton({
   const { addItem, isInCart } = useCartStore();
   const router = useRouter();
   const [added, setAdded] = useState(false);
-  const alreadyInCart = isInCart(courseId);
+  const [mounted, setMounted] = useState(false);
 
-  const btnClass = variant === 'gold'
-    ? 'w-full block text-center font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wide'
-    : 'w-full block text-center font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wide';
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Only read cart state after mount to avoid hydration mismatch
+  const alreadyInCart = mounted && isInCart(courseId);
+
+  const btnClass =
+    'w-full block text-center font-bold py-3 rounded-lg transition-all text-sm uppercase tracking-wide checkoutBtn';
 
   function handleAddToCart() {
     if (alreadyInCart) {
-      // Already in cart — go to checkout
       router.push('/checkout');
       return;
     }
@@ -44,7 +49,6 @@ export default function EnrollButton({
     addItem({ courseId, slug, title, price, originalPrice, thumbnailUrl, category });
     setAdded(true);
 
-    // Reset "Added!" state after 2s
     setTimeout(() => setAdded(false), 2000);
   }
 

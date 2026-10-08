@@ -10,36 +10,25 @@ interface Props {
   href?: string;
 }
 
-const variantStyles: Record<string, React.CSSProperties> = {
-  navbar: {
-    color: 'transparent',
-    height: '75px',
-    width: 'auto',
-    marginTop: '15%',
-  },
-  footer: {
-    color: 'transparent',
-    height: '50px',
-    width: 'auto',
-  },
-  hero: {
-    color: 'transparent',
-    height: '100px',
-    width: 'auto',
-  },
+// Height values per variant — width is always auto
+const variantHeights: Record<string, number> = {
+  navbar: 75,
+  footer: 50,
+  hero:   100,
 };
 
 export default function Logo({ variant = 'navbar', href = '/' }: Props) {
-  const style = variantStyles[variant];
+  const h = variantHeights[variant];
 
   const img = (
     <Image
       src="/logo.png"
       alt="Clinical Research Nexus"
-      width={240}
-      height={75}
+      width={0}
+      height={0}
+      sizes="300px"
       className="object-contain"
-      style={style}
+      style={{ height: `${h}px`, width: 'auto', marginTop: variant === 'navbar' ? '15%' : undefined }}
       priority={variant === 'navbar'}
     />
   );

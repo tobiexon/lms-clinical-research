@@ -17,12 +17,18 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen]       = useState(false);
   const [aboutOpen, setAboutOpen]     = useState(false);
   const [user, setUser]               = useState<{ firstName: string; role: string } | null>(null);
+  const [mounted, setMounted]         = useState(false);
   const pathname  = usePathname();
   const router    = useRouter();
   const aboutRef  = useRef<HTMLDivElement>(null);
 
-  // Load user
+  // Load user — only runs on client, after mount
   useEffect(() => {
+    setMounted(true);
+  }, []);
+  // Fetch user after mount — depends on `mounted` and `pathname`
+  useEffect(() => {
+    if (!mounted) return;
     const token = Cookies.get('access_token');
     if (!token) { setUser(null); return; }
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/v1/users/me`, {
@@ -31,7 +37,7 @@ export default function Navbar() {
       .then((r) => r.ok ? r.json() : null)
       .then((data) => data ? setUser({ firstName: data.firstName, role: data.role }) : setUser(null))
       .catch(() => setUser(null));
-  }, [pathname]);
+  }, [pathname, mounted]);
 
   // Close about dropdown when clicking outside
   useEffect(() => {
@@ -164,7 +170,7 @@ export default function Navbar() {
           {/* Desktop right: cart + auth */}
           <div className="hidden md:flex items-center gap-3">
             <CartIcon />
-            {user ? (
+            {mounted && user ? (
               <>
                 <MyCoursesMenu />
                 {isAdmin && (
@@ -239,7 +245,7 @@ export default function Navbar() {
               </Link>
             ))}
             <div className="pt-3 border-t border-white/10 flex flex-col gap-2 px-4">
-              {user ? (
+              {mounted && user ? (
                 <>
                   <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-200">
                     My Dashboard

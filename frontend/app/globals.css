@@ -269,3 +269,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+
+.checkoutBtn {
+    width: 155px;
+}

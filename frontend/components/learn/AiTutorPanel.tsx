@@ -14,10 +14,37 @@ interface Props {
   lessonId: string;
   lessonTitle: string;
   courseSlug?: string;
-  onClose?: () => void; // called when user clicks X inside the panel
+  onClose?: () => void;
 }
 
-// Suggested quick-start questions — rotated per lesson type
+// ── Blue question-mark icon matching the uploaded design ─────────────────────
+function TutorIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      style={{ display: 'block', flexShrink: 0 }}
+    >
+      <circle cx="50" cy="50" r="50" fill="#29ABE2" />
+      <text
+        x="50"
+        y="73"
+        textAnchor="middle"
+        fontSize="68"
+        fontWeight="bold"
+        fontFamily="Arial, Helvetica, sans-serif"
+        fill="white"
+      >
+        ?
+      </text>
+    </svg>
+  );
+}
+
 const QUICK_QUESTIONS = [
   'Summarise this lesson for me',
   'What are the key points?',
@@ -34,12 +61,10 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input on mount
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
@@ -104,15 +129,15 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-800 to-purple-600">
         <div className="flex items-center gap-2.5">
-          {/* Animated pulse indicator */}
-          <div className="relative shrink-0">
-            <span className="text-xl">🤖</span>
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-purple-700"/>
+          {/* Blue question-mark icon with online indicator */}
+          <div className="relative" style={{ width: 26, height: 26 }}>
+            <TutorIcon size={26} />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-400 rounded-full border-2 border-purple-700" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-white text-sm font-bold leading-tight">AI Tutor</p>
-              <span className="text-[10px] bg-purple-500/60 text-purple-100 px-1.5 py-0.5 rounded font-medium">GPT-4o mini</span>
+              <p className="text-white text-sm font-bold leading-tight">LMS Tutor</p>
+              <span className="text-[10px] bg-purple-500/60 text-purple-100 px-1.5 py-0.5 rounded font-medium hide">GPT-3.5</span>
             </div>
             <p className="text-purple-200 text-[11px] truncate max-w-[260px]">
               Answering questions about: <strong className="text-white">{lessonTitle}</strong>
@@ -121,7 +146,6 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Clear chat */}
           {messages.length > 0 && (
             <button
               onClick={clearChat}
@@ -131,7 +155,6 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
               Clear
             </button>
           )}
-          {/* Close */}
           {onClose && (
             <button
               onClick={onClose}
@@ -139,7 +162,7 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
               title="Close AI Tutor"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
@@ -149,23 +172,22 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
       {/* ── Message area ──────────────────────────────────────────────────── */}
       <div className="h-72 overflow-y-auto px-4 py-3 space-y-3 bg-gray-50/60">
 
-        {/* Empty state with quick questions */}
+        {/* Empty state */}
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
-              <span className="text-2xl">💬</span>
+            <div className="mb-3">
+              <TutorIcon size={48} />
             </div>
-            <p className="text-sm font-semibold text-gray-700 mb-1">What would you like to know?</p>
-            <p className="text-xs text-gray-400 mb-4 px-4 leading-relaxed">
+            <p className="text-sm font-semibold text-gray-700 mb-1 lmsTutorBld">What would you like to know?</p>
+            <p className="text-xs text-gray-400 mb-4 px-4 leading-relaxed lmsTutor">
               I'll answer using the lesson content. Ask anything — from quick summaries to deep-dives.
             </p>
-            {/* Quick question chips */}
             <div className="flex flex-wrap gap-1.5 justify-center">
               {QUICK_QUESTIONS.map(q => (
                 <button
                   key={q}
                   onClick={() => useQuickQuestion(q)}
-                  className="text-[11px] bg-white border border-purple-200 hover:border-purple-400 hover:bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full transition-colors shadow-xs"
+                  className="text-[11px] bg-white border border-purple-200 hover:border-purple-400 hover:bg-purple-50 text-purple-700 px-2.5 py-1 rounded-full transition-colors"
                 >
                   {q}
                 </button>
@@ -180,18 +202,18 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
 
             {/* AI avatar */}
             {msg.role === 'assistant' && (
-              <div className="w-6 h-6 rounded-full bg-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-                <span className="text-xs">🤖</span>
+              <div className="mt-0.5 shrink-0">
+                <TutorIcon size={22} />
               </div>
             )}
 
-            <div className={`max-w-[85%] rounded-2xl px-3 py-2 ${
+            <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
               msg.role === 'user'
-                ? 'bg-purple-600 text-white rounded-br-sm text-sm'
-                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm text-sm'
+                ? 'bg-purple-600 text-white rounded-br-sm'
+                : 'bg-white border border-gray-200 text-gray-800 rounded-bl-sm shadow-sm'
             }`}>
               {msg.role === 'assistant' && (
-                <p className="text-[10px] font-bold text-purple-500 mb-1">AI Tutor</p>
+                <p className="text-[10px] font-bold text-purple-500 mb-1">LMS Tutor</p>
               )}
               <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
             </div>
@@ -208,14 +230,14 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
         {/* Typing indicator */}
         {loading && (
           <div className="flex gap-2 justify-start">
-            <div className="w-6 h-6 rounded-full bg-purple-700 flex items-center justify-center shrink-0 mt-0.5">
-              <span className="text-xs">🤖</span>
+            <div className="mt-0.5 shrink-0">
+              <TutorIcon size={22} />
             </div>
             <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}/>
-                <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}/>
-                <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}/>
+                <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -232,7 +254,7 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
           </div>
         )}
 
-        <div ref={bottomRef}/>
+        <div ref={bottomRef} />
       </div>
 
       {/* ── Input area ────────────────────────────────────────────────────── */}
@@ -248,15 +270,13 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
               rows={2}
               maxLength={1000}
               disabled={loading}
-              className="w-full text-sm resize-none border border-gray-200 rounded-xl px-3 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent placeholder-gray-400 disabled:opacity-60 leading-relaxed bg-gray-50 focus:bg-white transition-colors"
+              className="w-full text-sm resize-none border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent placeholder-gray-400 disabled:opacity-60 leading-relaxed bg-gray-50 focus:bg-white transition-colors"
             />
-            {/* Character count inside textarea */}
             {question.length > 800 && (
               <span className="absolute bottom-2 right-2 text-[9px] text-gray-400">{question.length}/1000</span>
             )}
           </div>
 
-          {/* Send button */}
           <button
             type="submit"
             disabled={loading || !question.trim()}
@@ -265,18 +285,17 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
           >
             {loading ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             ) : (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             )}
           </button>
         </div>
 
-        {/* Footer hint */}
         <p className="text-[9px] text-gray-400 mt-1.5 text-center">
           Lesson-aware · Clinical research expertise · Answers based on your current lesson
         </p>

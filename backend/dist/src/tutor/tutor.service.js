@@ -58,7 +58,7 @@ let TutorService = class TutorService {
     }
     async ask(dto, userId) {
         if (!this.openai) {
-            throw new common_1.InternalServerErrorException('AI Tutor is not configured. Please contact support.');
+            throw new common_1.InternalServerErrorException('LMS Tutor is not configured. Please contact support.');
         }
         const lesson = await this.prisma.lesson.findUnique({
             where: { id: dto.lessonId },
@@ -80,7 +80,7 @@ let TutorService = class TutorService {
             },
         });
         if (!enrollment) {
-            throw new common_1.BadRequestException('You must be enrolled in this course to use the AI Tutor.');
+            throw new common_1.BadRequestException('You must be enrolled in this course to use the LMS Tutor.');
         }
         const rawText = extractLessonText(lesson.content);
         const context = rawText.slice(0, MAX_CONTEXT_CHARS);
@@ -107,7 +107,7 @@ ${context || 'No structured lesson content available — answer from your genera
 Respond in plain, readable prose. Do not use markdown headers (## / ###) in your answer.`;
         try {
             const completion = await this.openai.chat.completions.create({
-                model: 'gpt-4o-mini',
+                model: 'gpt-3.5-turbo',
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: dto.question },
@@ -121,13 +121,18 @@ Respond in plain, readable prose. Do not use markdown headers (## / ###) in your
         }
         catch (err) {
             const msg = err?.message ?? '';
-            if (msg.includes('API key')) {
-                throw new common_1.InternalServerErrorException('AI Tutor configuration error. Please contact support.');
+            const status = err?.status ?? 0;
+            if (status === 401 || msg.toLowerCase().includes('api key') || msg.toLowerCase().includes('authentication')) {
+                throw new common_1.InternalServerErrorException('AI Tutor configuration error: invalid API key. Please contact support.');
             }
-            if (msg.includes('quota') || msg.includes('rate')) {
+            if (status === 429 || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate limit')) {
                 throw new common_1.InternalServerErrorException('AI Tutor is temporarily unavailable due to usage limits. Please try again shortly.');
             }
-            throw new common_1.InternalServerErrorException('AI Tutor encountered an error. Please try again.');
+            if (status === 404 || msg.toLowerCase().includes('model')) {
+                throw new common_1.InternalServerErrorException('AI Tutor model unavailable. Please contact support.');
+            }
+            console.error('[TutorService] OpenAI error:', err?.status, err?.message);
+            throw new common_1.InternalServerErrorException(`LMS Tutor encountered an error: ${msg || 'unknown error'}. Please try again.`);
         }
     }
 };

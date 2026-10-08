@@ -323,10 +323,14 @@ export default function LearnPage() {
                       : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100'
                   }`}
                 >
-                  <span className="text-lg shrink-0">🤖</span>
+                  {/* Blue question-mark icon */}
+                  <svg width="22" height="22" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="shrink-0" aria-hidden="true">
+                    <circle cx="50" cy="50" r="50" fill="#29ABE2"/>
+                    <text x="50" y="72" textAnchor="middle" fontSize="68" fontWeight="bold" fontFamily="Arial, sans-serif" fill="white">?</text>
+                  </svg>
                   <div className="flex-1 min-w-0 text-left">
                     <p className={`text-xs font-bold leading-tight ${tutorOpen ? 'text-white' : 'text-purple-700'}`}>
-                      Ask AI Tutor
+                      Ask LMS Tutor
                     </p>
                     <p className={`text-[10px] truncate ${tutorOpen ? 'text-purple-200' : 'text-purple-400'}`}>
                       {tutorOpen ? 'Scroll down to chat ↓' : 'Ask about this lesson'}
@@ -344,7 +348,7 @@ export default function LearnPage() {
                 </button>
 
                 {/* Hint text */}
-                <p className="text-[9px] text-gray-400 mt-1.5 text-center leading-tight">
+                <p className="text-[9px] text-gray-400 mt-1.5 text-center leading-tight hide">
                   Powered by GPT-4o mini · Lesson-aware answers
                 </p>
               </div>
@@ -468,8 +472,11 @@ export default function LearnPage() {
                   <div className="flex items-center gap-3 mb-4">
                     <div className="flex-1 h-px bg-purple-100"/>
                     <div className="flex items-center gap-1.5 px-3 py-1 bg-purple-50 border border-purple-200 rounded-full">
-                      <span className="text-sm">🤖</span>
-                      <span className="text-xs font-bold text-purple-700">AI Tutor</span>
+                      <svg width="14" height="14" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="50" cy="50" r="50" fill="#29ABE2"/>
+                        <text x="50" y="72" textAnchor="middle" fontSize="68" fontWeight="bold" fontFamily="Arial, sans-serif" fill="white">?</text>
+                      </svg>
+                      <span className="text-xs font-bold text-purple-700">LMS Tutor</span>
                     </div>
                     <div className="flex-1 h-px bg-purple-100"/>
                   </div>

@@ -273,3 +273,13 @@
 .checkoutBtn {
     width: 155px;
 }
+.hide {
+   display: none;
+}
+.lmsTutor {
+   color: #000;
+   font-size: 12px;
+}
+.lmsTutorBld {
+   font-weight: bold;
+}

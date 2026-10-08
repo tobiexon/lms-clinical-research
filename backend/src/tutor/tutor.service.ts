@@ -62,7 +62,7 @@ export class TutorService {
     // 1. Validate OpenAI is configured
     if (!this.openai) {
       throw new InternalServerErrorException(
-        'AI Tutor is not configured. Please contact support.',
+        'LMS Tutor is not configured. Please contact support.',
       );
     }
 
@@ -93,7 +93,7 @@ export class TutorService {
 
     if (!enrollment) {
       throw new BadRequestException(
-        'You must be enrolled in this course to use the AI Tutor.',
+        'You must be enrolled in this course to use the LMS Tutor.',
       );
     }
 
@@ -128,7 +128,7 @@ Respond in plain, readable prose. Do not use markdown headers (## / ###) in your
     // 6. Call OpenAI
     try {
       const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: dto.question },
@@ -144,18 +144,27 @@ Respond in plain, readable prose. Do not use markdown headers (## / ###) in your
       return { answer };
     } catch (err: any) {
       const msg: string = err?.message ?? '';
-      if (msg.includes('API key')) {
+      const status: number = err?.status ?? 0;
+
+      if (status === 401 || msg.toLowerCase().includes('api key') || msg.toLowerCase().includes('authentication')) {
         throw new InternalServerErrorException(
-          'AI Tutor configuration error. Please contact support.',
+          'AI Tutor configuration error: invalid API key. Please contact support.',
         );
       }
-      if (msg.includes('quota') || msg.includes('rate')) {
+      if (status === 429 || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate limit')) {
         throw new InternalServerErrorException(
           'AI Tutor is temporarily unavailable due to usage limits. Please try again shortly.',
         );
       }
+      if (status === 404 || msg.toLowerCase().includes('model')) {
+        throw new InternalServerErrorException(
+          'AI Tutor model unavailable. Please contact support.',
+        );
+      }
+      // Log the real error for debugging
+      console.error('[TutorService] OpenAI error:', err?.status, err?.message);
       throw new InternalServerErrorException(
-        'AI Tutor encountered an error. Please try again.',
+        `LMS Tutor encountered an error: ${msg || 'unknown error'}. Please try again.`,
       );
     }
   }

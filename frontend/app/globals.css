@@ -283,3 +283,6 @@
 .lmsTutorBld {
    font-weight: bold;
 }
+aside.shadow-md {
+    width: 20rem;
+}

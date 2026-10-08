@@ -105,3 +105,4 @@ In
 Restart both the backend and frontend dev servers
 For testing, use Stripe's test cards: 4242 4242 4242 4242 (any future expiry, any CVV) simulates a successful payment from any country.
 
+# OPENAI API KEY from - https://platform.openai.com/api-keys - see .env file - with t.o@gmail.com (getfull)

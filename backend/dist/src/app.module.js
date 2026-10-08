@@ -25,6 +25,7 @@ const payments_module_1 = require("./payments/payments.module");
 const subscribe_module_1 = require("./subscribe/subscribe.module");
 const legal_module_1 = require("./legal/legal.module");
 const contact_module_1 = require("./contact/contact.module");
+const tutor_module_1 = require("./tutor/tutor.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -48,6 +49,7 @@ exports.AppModule = AppModule = __decorate([
             subscribe_module_1.SubscribeModule,
             legal_module_1.LegalModule,
             contact_module_1.ContactModule,
+            tutor_module_1.TutorModule,
         ],
     })
 ], AppModule);

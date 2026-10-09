@@ -37,8 +37,8 @@ interface Course {
   instructors: any[];
 }
 
-// ─── CDM course slug — AI Tutor is enabled for this course ───────────────────
-const AI_TUTOR_ENABLED_SLUGS = ['clinical-data-management-principles'];
+// ─── AI Tutor is enabled for all courses ─────────────────────────────────────
+const AI_TUTOR_ENABLED = true;
 
 export default function LearnPage() {
   const router = useRouter();
@@ -57,7 +57,7 @@ export default function LearnPage() {
   const startTimeRef = useRef<number>(Date.now());
   const tutorRef = useRef<HTMLDivElement>(null);
 
-  const aiTutorEnabled = course ? AI_TUTOR_ENABLED_SLUGS.includes(course.slug) : false;
+  const aiTutorEnabled = AI_TUTOR_ENABLED;
 
   useEffect(() => {
     const token = Cookies.get('access_token');

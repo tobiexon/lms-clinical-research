@@ -143,28 +143,55 @@ Respond in plain, readable prose. Do not use markdown headers (## / ###) in your
 
       return { answer };
     } catch (err: any) {
+      // Always log the full error details to Render/server logs for diagnosis
+      const status: number = err?.status ?? err?.statusCode ?? 0;
       const msg: string = err?.message ?? '';
-      const status: number = err?.status ?? 0;
+      const errorBody = err?.error ?? err?.response?.data ?? {};
+      const errorType: string = errorBody?.error?.type ?? errorBody?.type ?? '';
+      const errorCode: string = errorBody?.error?.code ?? errorBody?.code ?? '';
 
-      if (status === 401 || msg.toLowerCase().includes('api key') || msg.toLowerCase().includes('authentication')) {
+      console.error('[TutorService] OpenAI error details:', {
+        status,
+        message: msg,
+        type: errorType,
+        code: errorCode,
+        raw: JSON.stringify(errorBody).slice(0, 500),
+      });
+
+      if (status === 401 || msg.toLowerCase().includes('api key') || msg.toLowerCase().includes('authentication') || errorCode === 'invalid_api_key') {
         throw new InternalServerErrorException(
-          'AI Tutor configuration error: invalid API key. Please contact support.',
+          'AI Tutor: Invalid API key. Please update OPENAI_API_KEY in Render environment variables.',
         );
       }
-      if (status === 429 || msg.toLowerCase().includes('quota') || msg.toLowerCase().includes('rate limit')) {
+
+      if (status === 429) {
+        // Distinguish between rate limit (RPM/TPM) and billing quota exhaustion
+        const isQuotaExhausted =
+          errorCode === 'insufficient_quota' ||
+          errorType === 'insufficient_quota' ||
+          msg.toLowerCase().includes('quota') ||
+          msg.toLowerCase().includes('exceeded your current quota');
+
+        if (isQuotaExhausted) {
+          throw new InternalServerErrorException(
+            'AI Tutor: OpenAI free credit has been used up. Please add billing at platform.openai.com/settings/billing.',
+          );
+        }
+
+        // Rate limit (too many requests per minute) — temporary
         throw new InternalServerErrorException(
-          'AI Tutor is temporarily unavailable due to usage limits. Please try again shortly.',
+          'AI Tutor: Rate limit reached. Please wait 10 seconds and try again.',
         );
       }
-      if (status === 404 || msg.toLowerCase().includes('model')) {
+
+      if (status === 404 || errorCode === 'model_not_found') {
         throw new InternalServerErrorException(
-          'AI Tutor model unavailable. Please contact support.',
+          'AI Tutor: Model unavailable. Please contact support.',
         );
       }
-      // Log the real error for debugging
-      console.error('[TutorService] OpenAI error:', err?.status, err?.message);
+
       throw new InternalServerErrorException(
-        `LMS Tutor encountered an error: ${msg || 'unknown error'}. Please try again.`,
+        `AI Tutor error (${status || 'unknown'}): ${msg || 'Please try again.'}`,
       );
     }
   }

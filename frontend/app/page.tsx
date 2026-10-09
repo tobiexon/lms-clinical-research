@@ -103,7 +103,7 @@ export default async function HomePage() {
               className="bg-[#c9a84c] hover:bg-[#b8973b] text-white px-8 py-3.5 rounded-lg font-semibold text-base transition-colors shadow-lg">
               Explore Training Programmes
             </Link>
-            <Link href="/programs"
+            <Link href="/certificates"
               className="border border-cyan-400/60 text-cyan-200 hover:text-white hover:border-white px-8 py-3.5 rounded-lg font-semibold text-base transition-colors">
               View Certificates
             </Link>

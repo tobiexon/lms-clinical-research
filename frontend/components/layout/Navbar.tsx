@@ -179,6 +179,16 @@ export default function Navbar() {
                     Admin
                   </Link>
                 )}
+                <Link
+                  href="/certificates"
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    pathname?.startsWith('/certificates')
+                      ? 'text-white bg-white/10'
+                      : 'text-cyan-200 hover:text-white hover:bg-white/10'
+                  }`}
+                >
+                  My Certificates
+                </Link>
                 <Link href="/dashboard" className="text-sm text-cyan-200 hover:text-white transition-colors">
                   Hi, {user.firstName}
                 </Link>
@@ -249,6 +259,9 @@ export default function Navbar() {
                 <>
                   <Link href="/dashboard" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-200">
                     My Dashboard
+                  </Link>
+                  <Link href="/certificates" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-200">
+                    My Certificates
                   </Link>
                   {isAdmin && (
                     <Link href="/admin" onClick={() => setMenuOpen(false)} className="text-sm text-cyan-300">

@@ -249,7 +249,7 @@ export default function AiTutorPanel({ lessonId, lessonTitle, courseSlug, onClos
             <span className="text-red-500 text-base shrink-0">⚠️</span>
             <div>
               <p className="text-xs font-semibold text-red-700">Unable to get answer</p>
-              <p className="text-xs text-red-500 mt-0.5">{error}</p>
+              <p className="text-xs text-red-500 mt-0.5">{error.replace("AI", "LMS")}</p>
             </div>
           </div>
         )}

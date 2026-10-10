@@ -55,10 +55,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
       <aside className="w-60 bg-primary-900 text-white flex flex-col shrink-0">
-        <div className="p-5 border-b border-primary-800">
-          <p className="text-xs text-primary-400 uppercase tracking-widest mb-1">Exon Sciences</p>
-          <p className="font-bold text-lg">Admin Panel</p>
-        </div>
+        <Link href="/" className="block p-5 border-b border-primary-800 hover:bg-primary-800 transition-colors group">
+          <p className="text-xs text-primary-400 uppercase tracking-widest mb-1 group-hover:text-primary-300">Exon Sciences</p>
+          <p className="font-bold text-lg group-hover:text-cyan-300 transition-colors">Admin Panel</p>
+        </Link>
 
         <nav className="flex-1 p-3 space-y-1">
           {NAV.map((item) => {
